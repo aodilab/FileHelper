@@ -1,17 +1,8 @@
-import os
-import io
-import json
-import time
-import socket
-import zipfile
-import mimetypes
-import threading
-import subprocess
-import urllib.parse
+import os, io, html, json, time, socket, zipfile, mimetypes, threading, subprocess, urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-from config.settings import DEFAULT_PORT, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
+from config.settings import APPLE_TOUCH_ICON_PATH, DEFAULT_PORT, ICON_ICO_PATH, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
 from src.core.queue_manager import get_local_ip, format_size
 
 
@@ -34,27 +25,38 @@ def make_handler(file_queue, host_ip, port):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Range")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
 
         def do_OPTIONS(self):
-            self.send_response(200)
-            self.send_cors_headers()
-            self.end_headers()
+            self.send_response(200); self.send_cors_headers(); self.end_headers()
 
         def do_POST(self):
-            path = urllib.parse.urlparse(self.path).path
+            parsed = urllib.parse.urlparse(self.path)
+            path = parsed.path
             length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(length) if length > 0 else b""
+            body = self.rfile.read(length) if 0 < length <= 200 * 1024 * 1024 else b""
             if path == "/api/add":
                 try:
                     data = json.loads(body.decode("utf-8"))
                     added = file_queue.add_files(data.get("paths", []))
                     file_queue.request_wakeup()
                     self._send_json({"success": True, "added": added})
-                except Exception as e:
-                    self._send_text(str(e), status=400)
+                except Exception as e: self._send_text(str(e), status=400)
+            elif path == "/api/text":
+                try:
+                    file_queue.mark_phone_connected()
+                    data = json.loads(body.decode("utf-8"))
+                    item = file_queue.add_text_item(data.get("text", ""), sender=data.get("sender", "phone"))
+                    self._send_json({"success": bool(item), "item": item})
+                except Exception as e: self._send_text(str(e), status=400)
+            elif path == "/api/upload":
+                file_queue.mark_phone_connected()
+                qs = urllib.parse.parse_qs(parsed.query)
+                name, mime = qs.get("name", ["手机图片.png"])[0], qs.get("mime", ["image/png"])[0]
+                item = file_queue.add_memory_item(name, body, mime=mime, sender=qs.get("sender", ["phone"])[0])
+                self._send_json({"success": bool(item), "item": item})
             elif path == "/api/clear":
-                file_queue.clear_all()
-                self._send_json({"success": True})
+                file_queue.clear_all(); self._send_json({"success": True})
             else:
                 self._send_text("Not Found", status=404)
 
@@ -62,20 +64,35 @@ def make_handler(file_queue, host_ip, port):
             path = urllib.parse.urlparse(self.path).path
             if path == "/api/ping":
                 file_queue.request_wakeup()
-                return self._send_json({"status": "ok", "app": "AppleDrop"})
+                return self._send_json({"status": "ok", "app": "FileHelper"})
+            if path in ("/", "/index.html", "/api/files") or path.startswith("/download/"):
+                file_queue.mark_phone_connected()
+            if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
+                if os.path.exists(APPLE_TOUCH_ICON_PATH):
+                    with open(APPLE_TOUCH_ICON_PATH, "rb") as f:
+                        return self._send_text(f.read(), content_type="image/png")
+            if path == "/favicon.ico" and os.path.exists(ICON_ICO_PATH):
+                with open(ICON_ICO_PATH, "rb") as f:
+                    return self._send_text(f.read(), content_type="image/x-icon")
+            if path == "/manifest.webmanifest":
+                return self._send_json({"name": "传输助手", "short_name": "传输助手", "start_url": "/", "display": "standalone", "background_color": "#ffffff", "theme_color": "#ffffff", "icons": [{"src": "/apple-touch-icon.png?v=2", "sizes": "180x180", "type": "image/png"}]})
             if path == "/api/files":
-                base = f"http://{host_ip}:{port}"
-                files_out = [
-                    {**{k: it[k] for k in ("id", "name", "size", "size_str", "status")}, "url": f"{base}/download/{it['id']}"}
-                    for it in file_queue.get_all()
-                ]
-                return self._send_json({"count": len(files_out), "files": files_out})
+                keys = ("id", "kind", "sender", "name", "text", "size", "size_str", "status", "progress", "ts")
+                ratio = lambda t: round(t.size[1] / max(1, t.size[0]), 4) if t is not None else None
+                files_out = [{**{k: it.get(k) for k in keys}, "url": f"/download/{it['id']}", "ratio": ratio(it.get("thumb"))} for it in file_queue.get_all()]
+                page_ver = int(os.path.getmtime(MOBILE_HTML_PATH))
+                return self._send_json({"count": len(files_out), "version": file_queue.version, "page_ver": page_ver, "files": files_out})
+            if path.startswith("/thumb/"):
+                item = file_queue.get_by_id(path.split("/thumb/")[1])
+                if not item or item.get("thumb") is None: return self._send_text("Not Found", status=404)
+                buf = io.BytesIO(); item["thumb"].convert("RGB").save(buf, "JPEG", quality=85)
+                return self._send_text(buf.getvalue(), content_type="image/jpeg")
             if path.startswith("/api/latest") or path.startswith("/api/next"):
                 item = file_queue.get_next_pending()
-                return self._stream_file(item) if item else self._send_text("电脑端 AppleDrop 暂无待发送文件", status=404)
+                return self._stream_item(item) if item else self._send_text("暂无待发送文件", status=404)
             if path.startswith("/download/"):
                 item = file_queue.get_by_id(path.split("/download/")[1])
-                return self._stream_file(item) if item else self._send_text("Not Found", status=404)
+                return self._stream_item(item) if item else self._send_text("Not Found", status=404)
             if path == "/download_zip":
                 return self._send_zip_archive()
             if path in ("/", "/index.html"):
@@ -94,21 +111,29 @@ def make_handler(file_queue, host_ip, port):
         def _send_json(self, obj):
             self._send_text(json.dumps(obj, ensure_ascii=False), content_type="application/json; charset=utf-8")
 
-        def _stream_file(self, item):
-            file_path = item["path"]
+        def _stream_item(self, item):
+            if item.get("kind") == "memory":
+                raw = item.get("bytes") or b""
+                self.send_response(200)
+                self.send_cors_headers()
+                self.send_header("Content-Type", item.get("mime") or "application/octet-stream")
+                self.send_header("Content-Length", str(len(raw)))
+                safe_utf8 = urllib.parse.quote(item["name"])
+                self.send_header("Content-Disposition", f"attachment; filename*=UTF-8''{safe_utf8}")
+                self.end_headers()
+                self.wfile.write(raw)
+                if item.get("sender") != "phone":
+                    file_queue.update_status(item["id"], status="已完成", progress=100)
+                return
+            self._stream_disk_file(item)
+
+        def _stream_disk_file(self, item):
+            file_path = item.get("path", "")
             if not os.path.exists(file_path):
                 return self._send_text("File Missing", status=404)
-
             file_size = os.path.getsize(file_path)
             ext = os.path.splitext(item["name"])[1].lower() or ".bin"
-            content_type = mimetypes.guess_type(file_path)[0]
-            if not content_type:
-                ext_map = {
-                    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
-                    ".heic": "image/heic", ".heif": "image/heif", ".webp": "image/webp",
-                    ".gif": "image/gif", ".mp4": "video/mp4", ".mov": "video/quicktime",
-                }
-                content_type = ext_map.get(ext, "application/octet-stream")
+            content_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
             range_header = self.headers.get("Range")
             start, end = 0, file_size - 1
             if range_header and range_header.startswith("bytes="):
@@ -124,9 +149,8 @@ def make_handler(file_queue, host_ip, port):
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(content_length))
             self.send_header("Accept-Ranges", "bytes")
-            fallback_ascii = f"AppleDrop_Media{ext}"
             safe_utf8 = urllib.parse.quote(item["name"])
-            self.send_header("Content-Disposition", f'attachment; filename="{fallback_ascii}"; filename*=UTF-8\'\'{safe_utf8}')
+            self.send_header("Content-Disposition", f'attachment; filename="Media{ext}"; filename*=UTF-8\'\'{safe_utf8}')
             self.end_headers()
 
             bytes_sent, start_ts, last_notify = 0, time.time(), 0.0
@@ -153,12 +177,9 @@ def make_handler(file_queue, host_ip, port):
                 pass
 
         def _send_zip_archive(self):
-            items = file_queue.get_all()
+            items = [it for it in file_queue.get_all() if it.get("kind") == "file"]
             if not items:
                 return self._send_text("Empty Queue", status=404)
-            if len(items) == 1:
-                return self._stream_file(items[0])
-
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
                 for it in items:
@@ -169,34 +190,15 @@ def make_handler(file_queue, host_ip, port):
             self.send_cors_headers()
             self.send_header("Content-Type", "application/zip")
             self.send_header("Content-Length", str(len(payload)))
-            self.send_header("Content-Disposition", "attachment; filename=AppleDrop_Bundle.zip")
+            self.send_header("Content-Disposition", "attachment; filename=FileHelper_Bundle.zip")
             self.end_headers()
             self.wfile.write(payload)
-            for it in items:
-                file_queue.update_status(it["id"], status="已完成", progress=100)
 
         def _render_mobile_portal(self):
-            items = file_queue.get_all()
-            if not items:
-                rows_html = '<div class="empty-box">电脑端暂未放入文件<br>请将视频或照片拖入电脑端 AppleDrop 窗口</div>'
-            else:
-                rows_html = "\n".join(
-                    f'<div class="file-row"><div class="file-info"><div class="file-name">{it["name"]}</div>'
-                    f'<div class="file-meta">{it["size_str"]} · {it["status"]}</div></div>'
-                    f'<a class="link-action" href="/download/{it["id"]}" download="{it["name"]}">原画保存 ›</a></div>'
-                    for it in items
-                )
-            zip_html = f'<a class="btn-space-black" href="/download_zip">打包下载全部 ({len(items)} 项)</a>' if len(items) > 1 else ""
             with open(MOBILE_HTML_PATH, "r", encoding="utf-8") as f:
                 tpl = f.read()
-            html = (
-                tpl.replace("{{HOST_IP}}", host_ip)
-                .replace("{{PORT}}", str(port))
-                .replace("{{FILE_COUNT}}", str(len(items)))
-                .replace("{{FILE_ROWS_HTML}}", rows_html)
-                .replace("{{ZIP_BUTTON_HTML}}", zip_html)
-            )
-            self._send_text(html, content_type="text/html; charset=utf-8")
+            page = tpl.replace("{{HOST_IP}}", host_ip).replace("{{PORT}}", str(port))
+            self._send_text(page, content_type="text/html; charset=utf-8")
 
     return AppleDropHandler
 
@@ -207,7 +209,7 @@ class ServerThread:
         self.port = port
         self.host_ip = get_local_ip()
         self.httpd = None
-        self.thread = None
+        self.extra_servers = []
 
     @staticmethod
     def _reclaim_port(port):
@@ -232,10 +234,17 @@ class ServerThread:
                 self._reclaim_port(self.port)
         if not self.httpd:
             raise RuntimeError(f"无法绑定局域网服务端口 {self.port}")
-        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
-        self.thread.start()
+        threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
+        for alt_port in (8787, 80):
+            try:
+                srv = ThreadedHTTPServer(("0.0.0.0", alt_port), make_handler(self.file_queue, self.host_ip, alt_port))
+                self.extra_servers.append(srv)
+                threading.Thread(target=srv.serve_forever, daemon=True).start()
+            except Exception:
+                pass
 
     def stop(self):
-        if self.httpd:
-            self.httpd.shutdown()
-            self.httpd.server_close()
+        for srv in [self.httpd, *self.extra_servers]:
+            if srv:
+                try: srv.shutdown(); srv.server_close()
+                except Exception: pass

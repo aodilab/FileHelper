@@ -2,200 +2,249 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AppleDrop · 局域网原画直传</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#F7F7F7"><meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="传输助手">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2"><link rel="icon" type="image/png" sizes="180x180" href="/apple-touch-icon.png?v=2"><link rel="manifest" href="/manifest.webmanifest?v=2">
+  <title>文件传输助手</title>
   <style>
+    :root { --bg: #EDEDED; --bar: #F7F7F7; --line: #DCDCDC; --green: #95EC69; --wx: #07C160; --ink: #111; --sub: #8E8E93; --link: #576B95; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", sans-serif;
-      background-color: #f5f5f7;
-      color: #1d1d1f;
-      padding: 24px 16px 48px;
-      -webkit-font-smoothing: antialiased;
-    }
-    .eyebrow {
-      font-size: 12px;
-      font-weight: 600;
-      color: #0066cc;
-      letter-spacing: -0.01em;
-      margin-bottom: 4px;
-    }
-    .main-title {
-      font-size: 26px;
-      font-weight: 700;
-      color: #1d1d1f;
-      letter-spacing: -0.02em;
-    }
-    .sub-title {
-      font-size: 13px;
-      color: #86868b;
-      margin-top: 4px;
-      margin-bottom: 20px;
-    }
-    .apple-card {
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 18px 16px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
-      margin-bottom: 16px;
-    }
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #f0f2f5;
-    }
-    .section-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #1d1d1f;
-    }
-    .section-meta {
-      font-size: 12px;
-      color: #86868b;
-      font-variant-numeric: tabular-nums;
-    }
-    .file-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0;
-      border-bottom: 1px solid #f0f2f5;
-      gap: 12px;
-    }
-    .file-row:last-child { border-bottom: none; padding-bottom: 2px; }
+    html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bar); color: var(--ink); font-size: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", sans-serif; }
+    #pwa-safepill { position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bar); z-index: 2147483647; pointer-events: none; transform: translateZ(0); }
+    .app { position: fixed; top: 0; left: 0; right: 0; height: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+    .top-bar { position: relative; z-index: 2; flex: none; height: 46px; background: var(--bar); border-bottom: 0.5px solid var(--line);
+      display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 0 8px; }
+    .top-title { grid-column: 2; text-align: center; font-size: 17px; font-weight: 500; }
+    .btn-clear { grid-column: 3; justify-self: end; border: none; background: none; color: var(--link); font-size: 15px; padding: 6px 8px; }
+    .chat-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 12px 14px; display: flex; flex-direction: column; }
+    .chip { align-self: center; margin: 14px 0 4px; font-size: 12px; color: var(--sub); }
+    .row { display: flex; flex-direction: column; max-width: 74%; margin-top: 12px; }
+    .row.mine { align-self: flex-end; align-items: flex-end; } .row.theirs { align-self: flex-start; align-items: flex-start; }
+    .bubble { position: relative; background: #fff; padding: 9px 12px; border-radius: 6px; font-size: 16px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; }
+    .row.mine .bubble { background: var(--green); }
+    .bubble::after { content: ""; position: absolute; top: 13px; border: 6px solid transparent; }
+    .row.mine .bubble::after { right: -11px; border-left-color: var(--green); } .row.theirs .bubble::after { left: -11px; border-right-color: #fff; }
+    .bubble:active, .file:active, .pic:active { opacity: 0.85; }
+    .pic { display: block; border-radius: 6px; background: #DADADA; object-fit: cover; }
+    .file { display: flex; align-items: center; gap: 12px; width: 232px; background: #fff; border-radius: 8px; padding: 12px 12px 12px 14px;
+      text-decoration: none; color: inherit; position: relative; overflow: hidden; }
     .file-info { flex: 1; min-width: 0; }
-    .file-name {
-      font-size: 14.5px;
-      font-weight: 600;
-      color: #1d1d1f;
-      word-break: break-all;
-      line-height: 1.35;
-    }
-    .file-meta {
-      font-size: 12px;
-      color: #86868b;
-      margin-top: 3px;
-      font-variant-numeric: tabular-nums;
-    }
-    .link-action {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: #0066cc;
-      text-decoration: none;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .btn-space-black {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 44px;
-      margin-top: 14px;
-      background: #1d1d1f;
-      color: #ffffff;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
-    }
-    .empty-box {
-      padding: 32px 12px 18px;
-      text-align: center;
-      color: #86868b;
-      font-size: 13.5px;
-      line-height: 1.6;
-    }
-    .step-row {
-      padding: 12px 0;
-      border-bottom: 1px solid #f0f2f5;
-      font-size: 13.5px;
-      color: #4b4b4e;
-      line-height: 1.5;
-    }
-    .step-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .step-num {
-      font-weight: 700;
-      color: #1d1d1f;
-      margin-right: 6px;
-      font-variant-numeric: tabular-nums;
-    }
-    .url-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f4f4f6;
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-top: 8px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      color: #1d1d1f;
-      word-break: break-all;
-    }
-    .copy-link {
-      border: none;
-      background: transparent;
-      color: #0066cc;
-      font-size: 12.5px;
-      font-weight: 600;
-      margin-left: 10px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
+    .file-name { font-size: 15px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+    .file-sub { margin-top: 4px; font-size: 12px; color: var(--sub); }
+    .badge { flex: none; width: 36px; height: 42px; border-radius: 5px; color: #fff; font-size: 10px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; background: #8E8E93; } .badge.video { background: #5884F5; }
+    .bar { position: absolute; left: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--wx); transition: width 0.3s; }
+    .meta { margin-top: 5px; font-size: 12px; color: var(--link); padding: 0 2px; }
+    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 8px;
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); } .app.kb .composer { padding: 6px 10px; }
+    .btn-plus { flex: none; width: 34px; height: 34px; margin-bottom: 2px; border-radius: 50%; border: 1.5px solid #3A3A3C; background: none;
+      font-size: 22px; font-weight: 300; line-height: 1; color: #3A3A3C; display: flex; align-items: center; justify-content: center; }
+    .input-wrap { position: relative; flex: 1; min-width: 0; min-height: 38px; background: #fff; border-radius: 6px; display: flex; }
+    .kb-shield { position: absolute; inset: 0; z-index: 3; } .app.kb .kb-shield { display: none; }
+    .input-box { width: 100%; height: 38px; max-height: 110px; padding: 8px 10px; border-radius: 6px; border: none; background: transparent;
+      font-size: 16px; font-family: inherit; line-height: 1.38; resize: none; outline: none; overflow-y: auto; }
+    .input-box.focusing { position: fixed; top: 0; left: 0; width: 20px; height: 20px; opacity: 0; pointer-events: none; }
+    .btn-send { flex: none; height: 34px; margin-bottom: 2px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx);
+      color: #fff; font-size: 15px; font-weight: 500; display: none; } .composer.typing .btn-send { display: block; }
+    .sheet { position: fixed; inset: 0; z-index: 100; background: #111; color: #fff; display: none; flex-direction: column; } .sheet.open { display: flex; }
+    .sheet-top { flex: none; height: 50px; display: grid; grid-template-columns: 70px 1fr 70px; align-items: center; padding: 0 6px; }
+    .sheet-top button { border: none; background: none; color: #fff; font-size: 16px; padding: 8px 10px; justify-self: start; }
+    .sheet-top span { text-align: center; font-size: 17px; font-weight: 500; }
+    .sheet-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 8px; }
+    .sheet-body > img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+    .grid { width: 100%; align-self: flex-start; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .grid > * { aspect-ratio: 1; width: 100%; object-fit: cover; background: #2C2C2E; border-radius: 3px; display: flex; align-items: center;
+      justify-content: center; font-size: 12px; color: #aaa; padding: 6px; word-break: break-all; text-align: center; overflow: hidden; }
+    .sheet-file { color: #ddd; font-size: 15px; text-align: center; word-break: break-all; padding: 0 20px; }
+    .sheet-bottom { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .sheet-bottom span { font-size: 13px; color: #aaa; }
+    .sheet-bottom button { height: 36px; padding: 0 22px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 16px; font-weight: 500; }
+    .viewer { position: fixed; inset: 0; background: #000; z-index: 150; display: none; align-items: center; justify-content: center; } .viewer.open { display: flex; }
+    .viewer img { max-width: 100%; max-height: 88%; object-fit: contain; -webkit-touch-callout: default; }
+    .viewer p { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); color: rgba(255,255,255,0.6); font-size: 13px; }
+    .toast { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(17,17,17,0.82); color: #fff;
+      padding: 10px 18px; border-radius: 8px; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 200; } .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
-  <div class="eyebrow">局域网无损通道 · {{HOST_IP}}</div>
-  <div class="main-title">AppleDrop</div>
-  <div class="sub-title">原画直传 · 零缓存占用 · 直存 iPhone 系统相册</div>
-
-  <div class="apple-card">
-    <div class="section-head">
-      <span class="section-title">待接收队列</span>
-      <span class="section-meta">共 {{FILE_COUNT}} 项</span>
-    </div>
-    {{FILE_ROWS_HTML}}
-    {{ZIP_BUTTON_HTML}}
+  <div id="pwa-safepill"></div>
+  <div class="app" id="app">
+    <div class="top-bar"><span class="top-title">文件传输助手</span><button class="btn-clear" id="btnClear" type="button">清空</button></div>
+    <main class="chat-list" id="chatList"></main>
+    <footer class="composer" id="composer">
+      <input type="file" id="fileInput" multiple accept="image/*,video/*,*/*" style="display:none">
+      <button class="btn-plus" id="btnPlus" type="button" aria-label="发送图片或文件">+</button>
+      <div class="input-wrap"><div class="kb-shield" id="kbShield"></div><textarea class="input-box" id="textInput" rows="1" enterkeyhint="send"></textarea></div>
+      <button class="btn-send" id="btnSend" type="button">发送</button>
+    </footer>
   </div>
-
-  <div class="apple-card">
-    <div class="section-head">
-      <span class="section-title">iOS 快捷指令配置</span>
-      <span class="section-meta">配一次终生免扫码</span>
-    </div>
-    <div class="step-row">
-      <span class="step-num">01</span>打开 iPhone 自带「快捷指令」App，点击右上角 <b>+</b> 新建。
-    </div>
-    <div class="step-row">
-      <span class="step-num">02</span>添加操作「获取 URL 的内容」，填入下方固定地址：
-      <div class="url-bar">
-        <span id="api-url">http://{{HOST_IP}}:{{PORT}}/api/latest</span>
-        <button class="copy-link" id="copy-btn" onclick="copyUrl()">复制</button>
-      </div>
-    </div>
-    <div class="step-row">
-      <span class="step-num">03</span>添加操作「存储到相簿」，并添加到主屏幕即可一键收片。
-    </div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-top"><button id="btnCancelSend" type="button">取消</button><span id="sheetTitle">发送给电脑</span></div>
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-bottom"><span id="sheetInfo"></span><button id="btnConfirmSend" type="button">发送</button></div>
   </div>
-
+  <div class="viewer" id="viewer"><img id="viewerImg" alt=""><p>长按图片可存到相册，轻点关闭</p></div>
+  <div class="toast" id="toast"></div>
   <script>
-    function copyUrl() {
-      const url = document.getElementById('api-url').innerText;
-      const btn = document.getElementById('copy-btn');
-      navigator.clipboard.writeText(url).then(() => {
-        btn.innerText = '已复制';
-        btn.style.color = '#1b6d2f';
-      });
+    const $ = (id) => document.getElementById(id);
+    const app = $('app'), list = $('chatList'), textInput = $('textInput'), fileInput = $('fileInput'), composer = $('composer'), vv = window.visualViewport;
+    const VIDEO_RE = /\.(mp4|mov|m4v|mkv|avi)$/i;
+    let rendered = new Map(), lastTs = null, pendingFiles = [], toastTimer = null, stick = true, pageVer = null, busy = false;
+
+    function showToast(msg, keep) {
+      const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer);
+      if (!keep) toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
     }
-    setTimeout(() => {
-      fetch('/api/files').then(r => r.json()).then(data => {
-        if (data.count !== {{FILE_COUNT}}) window.location.reload();
-      }).catch(() => {});
-    }, 3500);
+    function fallbackCopy(t, done) {
+      const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (_) {} document.body.removeChild(ta);
+    }
+    function copyText(t) {
+      const done = () => showToast('已复制');
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done));
+      fallbackCopy(t, done);
+    }
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+    const fmtSize = (n) => n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
+    const chipText = (ts) => { const d = new Date(ts * 1000), hm = d.toTimeString().slice(0, 5); return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}月${d.getDate()}日 ${hm}`; };
+    const fileSub = (it, isMine) => { const st = it.status || ''; return st.includes('传输') ? `${it.size_str} · ${st}` : st === '已完成' ? `${it.size_str} · ${isMine ? '已发送' : '已接收'}` : (isMine ? it.size_str : `${it.size_str} · 轻点下载`); };
+
+    /* ---------- 视口与键盘：唤醒瞬间将焦点锚定在顶部 (0,0)，阻断 iOS 整页上推，底部单次平滑升起 ---------- */
+    const toBottom = () => { list.scrollTop = list.scrollHeight; };
+    const EASE = { duration: 250, easing: 'cubic-bezier(0.32,0.72,0,1)' };
+    let fullH = window.innerHeight, kbH = +localStorage.getItem('ad_kbh') || Math.round(fullH * 0.48), kbActive = false, touchY = 0, focusTimer = null;
+    function fit() {
+      const rawH = vv ? vv.height : window.innerHeight, kbOpen = rawH < screen.height - 220;
+      if (kbOpen) { kbH = rawH; localStorage.setItem('ad_kbh', kbH); } else if (!kbActive) { fullH = rawH; }
+      app.style.height = (kbActive || kbOpen ? kbH : fullH) + 'px';
+      app.classList.toggle('kb', kbActive || kbOpen); if (stick) toBottom();
+    }
+    function openKb() {
+      if (kbActive) return;
+      kbActive = true; stick = true;
+      const prevH = app.offsetHeight;
+      textInput.classList.add('focusing'); void textInput.offsetHeight; textInput.focus();
+      app.classList.add('kb'); app.style.height = kbH + 'px'; toBottom();
+      if (prevH - kbH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: kbH + 'px' }], EASE);
+      clearTimeout(focusTimer); focusTimer = setTimeout(() => { textInput.classList.remove('focusing'); fit(); }, 280);
+    }
+    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', () => window.scrollTo(0, 0)); }
+    window.addEventListener('resize', fit);
+    list.addEventListener('scroll', () => { stick = list.scrollHeight - list.scrollTop - list.clientHeight < 60; }, { passive: true });
+    $('kbShield').addEventListener('touchend', (e) => { e.preventDefault(); openKb(); });
+    $('kbShield').addEventListener('click', openKb);
+    textInput.addEventListener('focus', openKb);
+    textInput.addEventListener('blur', () => {
+      kbActive = false; clearTimeout(focusTimer); textInput.classList.remove('focusing');
+      const prevH = app.offsetHeight; window.scrollTo(0, 0); fit();
+      if (fullH - prevH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: fullH + 'px' }], EASE);
+    });
+    list.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+    list.addEventListener('touchmove', (e) => { if (document.activeElement === textInput && Math.abs(e.touches[0].clientY - touchY) > 8) textInput.blur(); }, { passive: true });
+    list.addEventListener('click', (e) => { if (!e.target.closest('.bubble, .pic, .file, .meta')) textInput.blur(); });
+    document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list, .sheet-body, .input-box')) e.preventDefault(); }, { passive: false });
+
+    /* ---------- 消息渲染 ---------- */
+    function renderItem(it) {
+      if (rendered.has(it.id)) return updateItem(it);
+      if (it.ts && (lastTs === null || it.ts - lastTs > 300)) list.appendChild(el('div', 'chip', chipText(it.ts)));
+      if (it.ts) lastTs = it.ts;
+      const isMine = it.sender === 'phone', row = el('div', 'row ' + (isMine ? 'mine' : 'theirs'));
+      if (it.kind === 'text') {
+        const b = el('div', 'bubble', it.text || it.name);
+        b.onclick = () => copyText(it.text || it.name);
+        row.appendChild(b);
+        if (!isMine) { const m = el('div', 'meta', '轻点复制'); m.onclick = b.onclick; row.appendChild(m); }
+      } else if (it.ratio) {
+        const w = Math.min(200, 240 / it.ratio), img = el('img', 'pic');
+        img.style.width = w + 'px'; img.style.height = Math.round(w * it.ratio) + 'px';
+        img.decoding = 'async'; img.src = '/thumb/' + it.id; img.alt = it.name;
+        img.onclick = () => { $('viewerImg').src = it.url; $('viewer').classList.add('open'); };
+        row.appendChild(img);
+      } else {
+        const a = el('a', 'file'); a.href = it.url; a.download = it.name;
+        const info = el('div', 'file-info'), sub = el('div', 'file-sub');
+        info.append(el('div', 'file-name', it.name), sub);
+        const ext = ((it.name || '').split('.').pop() || 'FILE').slice(0, 4).toUpperCase();
+        const bar = el('div', 'bar'); bar.style.width = '0';
+        a.append(info, el('div', 'badge' + (VIDEO_RE.test(it.name) ? ' video' : ''), ext), bar);
+        row.appendChild(a); row._sub = sub; row._bar = bar;
+      }
+      list.appendChild(row); rendered.set(it.id, row); updateItem(it);
+      return true;
+    }
+    function updateItem(it) {
+      const row = rendered.get(it.id); if (!row || !row._sub) return false;
+      row._sub.textContent = fileSub(it, it.sender === 'phone');
+      const pct = (it.status || '').includes('传输') ? (it.progress || 0) : 0;
+      row._bar.style.width = pct ? `calc((100% - 28px) * ${pct / 100})` : '0';
+      return false;
+    }
+    async function syncQueue() {
+      try {
+        const data = await (await fetch('/api/files', { cache: 'no-store' })).json();
+        if (pageVer && data.page_ver !== pageVer && !textInput.value && !busy && !$('sheet').classList.contains('open')) return location.replace('/?v=' + data.page_ver);
+        pageVer = data.page_ver;
+        const ids = new Set(data.files.map((f) => f.id));
+        if ([...rendered.keys()].some((id) => !ids.has(id))) { rendered.clear(); lastTs = null; list.innerHTML = ''; }
+        const added = data.files.map(renderItem).some(Boolean);
+        if (added && stick) toBottom();
+      } catch (_) {}
+    }
+
+    /* ---------- 发送文字 ---------- */
+    function autoGrow() {
+      textInput.style.height = '38px'; textInput.style.height = Math.min(110, textInput.scrollHeight) + 'px';
+      composer.classList.toggle('typing', textInput.value.trim().length > 0);
+    }
+    async function sendText() {
+      const val = textInput.value.trim(); if (!val) return;
+      textInput.value = ''; autoGrow(); stick = true;
+      await fetch('/api/text', { method: 'POST', body: JSON.stringify({ text: val, sender: 'phone' }) });
+      syncQueue();
+    }
+    textInput.addEventListener('input', autoGrow);
+    textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendText(); } });
+    $('btnSend').addEventListener('mousedown', (e) => e.preventDefault()); $('btnSend').onclick = sendText;
+
+    /* ---------- 发送图片/文件：全屏预览后确认 ---------- */
+    $('btnPlus').onclick = () => { textInput.blur(); fileInput.click(); };
+    fileInput.onchange = () => {
+      if (!fileInput.files.length) return;
+      pendingFiles = Array.from(fileInput.files); fileInput.value = '';
+      const body = $('sheetBody'); body.innerHTML = '';
+      const thumbOf = (f) => { if (!/^image\//i.test(f.type)) return el('div', '', f.name); const i = el('img'); i.src = URL.createObjectURL(f); return i; };
+      if (pendingFiles.length === 1) {
+        body.appendChild(/^image\//i.test(pendingFiles[0].type) ? thumbOf(pendingFiles[0]) : el('div', 'sheet-file', pendingFiles[0].name));
+      } else {
+        const grid = el('div', 'grid'); pendingFiles.forEach((f) => grid.appendChild(thumbOf(f))); body.appendChild(grid);
+      }
+      $('sheetTitle').textContent = pendingFiles.length > 1 ? `发送 ${pendingFiles.length} 项给电脑` : '发送给电脑';
+      $('sheetInfo').textContent = `共 ${fmtSize(pendingFiles.reduce((s, f) => s + f.size, 0))}`;
+      $('sheet').classList.add('open');
+    };
+    const closeSheet = () => { $('sheet').classList.remove('open'); $('sheetBody').innerHTML = ''; };
+    $('btnCancelSend').onclick = () => { pendingFiles = []; closeSheet(); };
+    const uploadOne = (f, idx, count) => new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name, mime: f.type || 'application/octet-stream', sender: 'phone' }));
+      xhr.upload.onprogress = (e) => { if (e.lengthComputable) showToast((count > 1 ? `发送中 ${idx + 1}/${count} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); };
+      xhr.onloadend = () => resolve(xhr.status === 200);
+      xhr.send(f);
+    });
+    $('btnConfirmSend').onclick = async () => {
+      const files = pendingFiles.slice(); pendingFiles = []; closeSheet(); busy = true; stick = true;
+      let ok = 0;
+      for (let i = 0; i < files.length; i++) { if (await uploadOne(files[i], i, files.length)) ok++; syncQueue(); }
+      busy = false; showToast(ok === files.length ? '已发送' : `有 ${files.length - ok} 个发送失败`);
+    };
+    $('viewer').onclick = () => $('viewer').classList.remove('open');
+    $('btnClear').onclick = async () => { await fetch('/api/clear', { method: 'POST' }); syncQueue(); showToast('已清空'); };
+
+    fit(); syncQueue(); setInterval(syncQueue, 1500);
   </script>
 </body>
 </html>

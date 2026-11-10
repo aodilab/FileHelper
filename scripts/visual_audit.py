@@ -1,6 +1,7 @@
 import os
 import pathlib
-from config.settings import BASE_DIR, CODE_LINE_RULES, SCRATCH_DIR, WIN_WIDTH, WIN_HEIGHT
+from PIL import Image
+from config.settings import BASE_DIR, CODE_LINE_RULES, ICON_PNG_PATH, SCRATCH_DIR, WIN_WIDTH, WIN_HEIGHT
 from src.ui.renderer import AppleNeoRenderer
 
 
@@ -15,13 +16,16 @@ def render_audit_snapshots(output_dir=None):
     p_empty = os.path.join(target_dir, "audit_empty.png")
     img_empty.save(p_empty)
 
-    # 2. Queue state with long boundary filenames (testing zero ellipsis truncation)
+    # 2. Queue state: time chip, wrapped text, phone image (hovered, shows actions), file card in transfer
+    sample_thumb = Image.open(ICON_PNG_PATH).convert("RGBA") if os.path.exists(ICON_PNG_PATH) else Image.new("RGBA", (160, 120), (7, 193, 96, 255))
+    t0 = 1794300000
     sample_items = [
-        {"id": "1", "name": "赵云_王者出装箱_实操演示视频.mp4", "size": 9084899, "size_str": "8.66 MB", "status": "传输中 68%"},
-        {"id": "2", "name": "AODILAB_头像_高清2K.png", "size": 1117712, "size_str": "1.07 MB", "status": "已完成"},
-        {"id": "3", "name": "IMG_8842_4K60FPS_杜比视界原片.MOV", "size": 154829100, "size_str": "147.66 MB", "status": "等待发送"},
+        {"id": "1", "kind": "text", "sender": "pc", "text": "https://github.com/aodilab/FileHelper 这是一段比较长的文字，用来检查自动换行效果", "size_str": "40 字", "status": "点击复制", "ts": t0},
+        {"id": "2", "kind": "memory", "sender": "phone", "name": "IMG_8842.png", "thumb": sample_thumb, "size_str": "286.6 KB", "status": "已复制", "ts": t0 + 30},
+        {"id": "3", "kind": "file", "sender": "pc", "name": "赵云_王者出装箱_实操演示视频.mp4", "size_str": "8.66 MB", "status": "传输中 45%", "progress": 45, "ts": t0 + 900},
+        {"id": "4", "kind": "text", "sender": "phone", "text": "收到", "size_str": "2 字", "status": "点击复制", "ts": t0 + 920},
     ]
-    img_queue, _ = renderer.render(sample_items, "192.168.1.2", 8899)
+    img_queue, _ = renderer.render(sample_items, "192.168.1.2", 8899, phone_connected=True, hover_id="row_2")
     p_queue = os.path.join(target_dir, "audit_queue.png")
     img_queue.save(p_queue)
 

@@ -1,4 +1,4 @@
-# AppleDrop ｜ Windows 局域网无损直传 iPhone 相册工具
+# FileHelper ｜ 局域网双向原画与剪贴板文件传输助手
 
 <p align="left">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-34c759.svg" alt="License"></a>
@@ -14,14 +14,14 @@
 
 Windows 电脑传视频和照片到 iPhone 常见的三种方式各有局限：
 
-| 传统方式 | 存在问题 | AppleDrop 处理方式 |
+| 传统方式 | 存在问题 | FileHelper 处理方式 |
 | :--- | :--- | :--- |
 | **微信文件传输助手** | 视频被二次压缩、大体积文件受限，手机端需逐个点开手动保存 | **100% 原始文件直传**，支持 4K/60fps `.mp4` / `.mov` 大视频 |
 | **网盘 / iCloud** | 需先上传云端服务器再从手机下载，耗时取决于外网宽带上传速度 | **纯局域网内网直连**，不走外网流量，直接跑满本地路由器 Wi-Fi 速度 |
 | **数据线 / 第三方助手** | 需插拔线材或在电脑、手机两端安装常驻后台驱动插件 | **电脑单脚本即开即用 + 手机原生快捷指令/Safari**，手机端无需安装第三方 App |
 
 ### 底层传输机制（零拷贝）
-把文件拖入 AppleDrop 窗口时，程序**不会**在电脑内存中缓存或复制临时文件，仅记录文件的磁盘绝对路径。当 iPhone 发起请求时，服务端直接从原磁盘路径按 `512 KB` 分块流式读取（支持 `HTTP 206 Partial Content` 断点与分片流），占用内存极低，几十 GB 的原片也能秒级响应。
+把文件拖入 FileHelper 窗口时，程序**不会**在电脑内存中缓存或复制临时文件，仅记录文件的磁盘绝对路径。当 iPhone 发起请求时，服务端直接从原磁盘路径按 `512 KB` 分块流式读取（支持 `HTTP 206 Partial Content` 断点与分片流），占用内存极低，几十 GB 的原片也能秒级响应。
 
 ---
 
@@ -43,13 +43,13 @@ Windows 电脑传视频和照片到 iPhone 常见的三种方式各有局限：
 ### 2. 安装依赖并创建桌面图标
 ```powershell
 # 1. 克隆仓库
-git clone https://github.com/aodilab/AppleDrop.git
-cd AppleDrop
+git clone https://github.com/aodilab/FileHelper.git
+cd FileHelper
 
 # 2. 安装依赖
 pip install -r requirements.txt
 
-# 3. 在 Windows 桌面自动生成 AppleDrop 快捷方式图标
+# 3. 在 Windows 桌面自动生成 FileHelper 快捷方式图标
 python build.py --shortcut
 
 # 4. 启动程序
@@ -57,8 +57,8 @@ python build.py
 ```
 
 生成桌面快捷方式后，日常使用有两种投递方式：
-1. **窗口内投递**：双击桌面 `AppleDrop` 图标打开窗口，将视频或照片拖入窗口。
-2. **桌面图标直接投递**：直接把电脑上的视频或照片**拖拽到桌面的 `AppleDrop` 快捷方式图标上**，程序会自动启动（或唤醒已有窗口）并将文件加入待发送队列。
+1. **窗口内投递**：双击桌面 `FileHelper` 图标打开窗口，将视频或照片拖入窗口。
+2. **桌面图标直接投递**：直接把电脑上的视频或照片**拖拽到桌面的 `FileHelper` 快捷方式图标上**，程序会自动启动（或唤醒已有窗口）并将文件加入待发送队列。
 
 ---
 
@@ -74,7 +74,7 @@ python build.py
    - **第 2 步**：搜索并添加动作 **「存储到相簿」**（Save to Photo Album），保持默认参数「将 `URL 的内容` 存储到 `最近项目`」。
 3. 点击顶部指令名称可重命名（如「收电脑原片」），点击下方分享按钮选择 **「添加到主屏幕」**。
 
-> **日常使用流程**：电脑上把视频拖进 AppleDrop $\rightarrow$ 手机桌面点一下该快捷指令图标 $\rightarrow$ 视频直接无损存入 iPhone 相册。  
+> **日常使用流程**：电脑上把视频拖进 FileHelper $\rightarrow$ 手机桌面点一下该快捷指令图标 $\rightarrow$ 视频直接无损存入 iPhone 相册。  
 > *(注：首次运行快捷指令时，iOS 顶部会弹出「允许连接局域网设备」和「允许访问照片」权限提示，点击「始终允许」即可。)*
 
 ---
@@ -115,9 +115,9 @@ python build.py
 
 | 命令 | 作用 |
 | :--- | :--- |
-| `python build.py` | 启动 AppleDrop 桌面端窗口 |
+| `python build.py` | 启动 FileHelper 桌面端窗口 |
 | `python build.py <文件路径...>` | 启动或唤醒现有窗口，并将指定文件加入发送队列 |
-| `python build.py --shortcut` | 在 Windows 桌面创建 `AppleDrop.lnk` 快捷方式 |
+| `python build.py --shortcut` | 在 Windows 桌面创建 `FileHelper.lnk` 快捷方式 |
 | `python build.py --icon` | 重新生成 `assets/` 下的多分辨率图标 |
 | `python build.py --audit` | 生成三态界面快照并校验工程模块代码行数 |
 | `python build.py --all` | 依次执行图标生成、快捷方式创建与自审校验 |
@@ -131,7 +131,7 @@ python build.py
    - 检查电脑的 Windows 防火墙网络类型：如果当前 Wi-Fi 在 Windows 中被设为「公用网络（Public Network）」，防火墙可能拦截局域网 `8899` 端口访问。可在 Windows 设置中将该 Wi-Fi 改为「专用网络（Private Network）」，或在防火墙入站规则中放行 Python / `8899` 端口。
 2. **电脑 IP 地址变化或本地端口冲突怎么办？**
    - **IP 变动**：若路由器重启导致电脑局域网 IP 变动（窗口顶部标题栏会实时显示当前 IP），在手机快捷指令中将 IP 修正为新地址即可；
-   - **端口防占与独占保护**：为确保 iPhone 快捷指令中的固定端口（`8899`）永久有效，AppleDrop 启动时若检测到 `8899` 端口被其他非本程序进程占用，会自动清理冲突进程并夺回 `8899` 端口；运行期间开启 Windows 内核级 `SO_EXCLUSIVEADDRUSE` 独占锁，防止 Node.js 等第三方服务通过 `SO_REUSEADDR` 劫持端口。
+   - **端口防占与独占保护**：为确保 iPhone 快捷指令中的固定端口（`8899`）永久有效，FileHelper 启动时若检测到 `8899` 端口被其他非本程序进程占用，会自动清理冲突进程并夺回 `8899` 端口；运行期间开启 Windows 内核级 `SO_EXCLUSIVEADDRUSE` 独占锁，防止 Node.js 等第三方服务通过 `SO_REUSEADDR` 劫持端口。
 
 ---
 
@@ -140,7 +140,7 @@ python build.py
 - **修复端口冲突导致 iPhone 快捷指令失效问题**：
   - 移除原先遇到端口占用时静默顺延至 `8900` 端口的逻辑（顺延会导致手机端已配置的 `8899` 快捷指令返回 404）；
   - 新增启动端口自动接管机制（`_reclaim_port`），启动时若 `8899` 被其他本地进程占用，自动终止占用进程并锁定 `8899` 端口；
-  - 在 `ThreadedHTTPServer` 中启用 Windows `socket.SO_EXCLUSIVEADDRUSE` 套接字独占锁，阻止其他进程在 AppleDrop 运行期间抢占同一端口。
+  - 在 `ThreadedHTTPServer` 中启用 Windows `socket.SO_EXCLUSIVEADDRUSE` 套接字独占锁，阻止其他进程在 FileHelper 运行期间抢占同一端口。
 - **修复 iOS 相册接收图片/视频的流式传输与 MIME 识别问题**：
   - 补全 `.jpg` / `.jpeg` / `.png` / `.heic` / `.heif` / `.webp` / `.gif` / `.mp4` / `.mov` 的显式 MIME 映射兜底，避免因 Windows 注册表缺失 MIME 类型导致 iOS「存储到相簿」拒绝保存；
   - 统一文件扩展名小写化处理，修复 `HTTP 206 Partial Content` 分片流传输时的文件字节长度计算。
