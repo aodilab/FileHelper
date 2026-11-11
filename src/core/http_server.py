@@ -1,6 +1,6 @@
 import os, io, json, time, socket, mimetypes, threading, subprocess, urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from socketserver import ThreadingMixIn
+from socketserver import TCPServer, ThreadingMixIn
 
 from config.settings import APPLE_TOUCH_ICON_PATH, DEFAULT_PORT, ICON_ICO_PATH, MIME_OVERRIDES, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
 from src.core.queue_manager import get_local_ip, format_size
@@ -13,7 +13,8 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     def server_bind(self):
         if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-        super().server_bind()
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = "127.0.0.1", self.server_address[1]
 
 
 def make_handler(file_queue, host_ip, port):
@@ -69,7 +70,7 @@ def make_handler(file_queue, host_ip, port):
             if path == "/api/ping":
                 if "quit=1" in (parsed.query or ""): file_queue.quit_requested = True
                 else: file_queue.request_wakeup()
-                return self._send_json({"status": "ok", "app": "FileHelper", "boot_ts": file_queue.boot_ts})
+                return self._send_json({"status": "ok", "app": "FileHelper", "boot_ts": file_queue.boot_ts, "desktop": file_queue.desktop_name})
             if path in ("/", "/index.html", "/api/files") or path.startswith("/download/"):
                 file_queue.mark_phone_connected()
             if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):

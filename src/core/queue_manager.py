@@ -7,15 +7,18 @@ HISTORY_PATH, BLOBS_DIR = os.path.join(DATA_DIR, "history.json"), os.path.join(D
 _DIRECT_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
+def _desktop_name():
+    try:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(128)
+        ctypes.windll.user32.GetUserObjectInformationW(ctypes.windll.user32.GetThreadDesktop(ctypes.windll.kernel32.GetCurrentThreadId()), 2, buf, 256, None)
+        return buf.value
+    except Exception: return ""
+
+
 def _latest_code_mtime():
-    latest = 0.0
-    for sub in ("config", "src"):
-        for root, _, files in os.walk(os.path.join(BASE_DIR, sub)):
-            for fn in files:
-                if fn.endswith(".py"):
-                    try: latest = max(latest, os.path.getmtime(os.path.join(root, fn)))
-                    except Exception: pass
-    return latest
+    py = (os.path.join(r, fn) for sub in ("config", "src") for r, _, fs in os.walk(os.path.join(BASE_DIR, sub)) for fn in fs if fn.endswith(".py"))
+    return max((os.path.getmtime(p) for p in py if os.path.exists(p)), default=0.0)
 
 
 def copy_image_to_clipboard(item):
@@ -76,7 +79,7 @@ def check_existing_instance_and_send(files, port=DEFAULT_PORT):
         with _DIRECT_OPENER.open(req, timeout=0.3) as resp:
             info = json.loads(resp.read().decode("utf-8"))
             if info.get("app") == "FileHelper":
-                if info.get("boot_ts", 0) < _latest_code_mtime():
+                if info.get("boot_ts", 0) < _latest_code_mtime() or info.get("desktop", "") != _desktop_name():
                     try: _DIRECT_OPENER.open(f"http://127.0.0.1:{port}/api/ping?quit=1", timeout=0.2).close()
                     except Exception: pass
                     time.sleep(0.12)
@@ -94,7 +97,7 @@ class FileQueue:
     """Thread-safe queue with local persistence across restarts; clicking Clear wipes 100% of local data."""
 
     def __init__(self, persist=True):
-        self.lock, self.persist, self.boot_ts = threading.Lock(), persist, time.time()
+        self.lock, self.persist, self.boot_ts, self.desktop_name = threading.Lock(), persist, time.time(), _desktop_name()
         self.files, self.next_id, self.version = [], 1, 0
         self.wakeup_requested, self.quit_requested, self.phone_connected = False, False, False
         if self.persist: self._load_history()
