@@ -36,11 +36,11 @@ def main():
     if "--all" in args:
         build_app_icons()
         create_desktop_shortcut()
-        render_audit_snapshots()
+        render_audit_snapshots(sync_assets=True)
         _, violations = audit_code_lines()
         if violations:
             raise SystemExit(f"Line count violations: {violations}")
-        print("All build and audit tasks completed.")
+        print("All build, preview sync, and audit tasks completed.")
         return
 
     # Filter out CLI flags; remaining arguments are dropped file paths

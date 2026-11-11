@@ -1,146 +1,124 @@
-# FileHelper ｜ 局域网双向原画与剪贴板文件传输助手
+# FileHelper ｜ 局域网双向原画与剪贴板传输助手
 
 <p align="left">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-34c759.svg" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-07c160.svg" alt="License"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10+-007aff.svg" alt="Python"></a>
-  <img src="https://img.shields.io/badge/Platform-Windows%20%E2%86%92%20iPhone-1d1d1f.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%E2%86%94%20iPhone-1d1d1f.svg" alt="Platform">
 </p>
 
-将 Windows 电脑上的视频、照片通过同一 Wi-Fi 局域网直接传进 iPhone 系统相册，不经过外网、不压缩画质、不在电脑硬盘复制临时文件。
+在同一 Wi-Fi 局域网下，提供类似微信「文件传输助手」直觉体验的 **Windows ⇄ iPhone 双向原画、大文件与剪贴板传输工具**。不经过外网服务器、默认 100% 原图原片无损直传、电脑大文件零拷贝流式读取，并内置轻量级微信风独立看图器与框选标注工具。
 
 ---
 
-## 一、 解决什么问题？
+## 一、 核心特性与对比
 
-Windows 电脑传视频和照片到 iPhone 常见的三种方式各有局限：
-
-| 传统方式 | 存在问题 | FileHelper 处理方式 |
+| 传统方式 | 常见痛点 | FileHelper 方案 |
 | :--- | :--- | :--- |
-| **微信文件传输助手** | 视频被二次压缩、大体积文件受限，手机端需逐个点开手动保存 | **100% 原始文件直传**，支持 4K/60fps `.mp4` / `.mov` 大视频 |
-| **网盘 / iCloud** | 需先上传云端服务器再从手机下载，耗时取决于外网宽带上传速度 | **纯局域网内网直连**，不走外网流量，直接跑满本地路由器 Wi-Fi 速度 |
-| **数据线 / 第三方助手** | 需插拔线材或在电脑、手机两端安装常驻后台驱动插件 | **电脑单脚本即开即用 + 手机原生快捷指令/Safari**，手机端无需安装第三方 App |
+| **微信文件传输助手** | 图片/视频默认压缩、大体积文件受限、需登录账号并走公网中转 | **纯局域网高速直连**，默认 **100% 原始画质**，几十 GB 的 4K/60fps `.mp4` / `.mov` 秒级流式响应 |
+| **网盘 / iCloud** | 先上传云端再下载到另一端，受限于外网宽带上传速率与云空间配额 | **零外网流量消耗**，直接跑满本地路由器 Wi-Fi 带宽 |
+| **单向局域网投递脚本** | 仅支持单向发文件，不支持双向发文字链接、粘贴截图或看图框选标注 | **完整双向对话流**：文字/链接一键复制、电脑 `Ctrl+V` 输入框草稿图预览、双端原图互传、内置看图与框选裁剪编辑 |
 
-### 底层传输机制（零拷贝）
-把文件拖入 FileHelper 窗口时，程序**不会**在电脑内存中缓存或复制临时文件，仅记录文件的磁盘绝对路径。当 iPhone 发起请求时，服务端直接从原磁盘路径按 `512 KB` 分块流式读取（支持 `HTTP 206 Partial Content` 断点与分片流），占用内存极低，几十 GB 的原片也能秒级响应。
+### 底层架构原则
+1. **磁盘文件零拷贝流（Zero-Copy Range Streaming）**：电脑拖入文件或文件夹时，仅记录磁盘绝对路径，不复制临时文件；手机端拉取时直接从原路径按 `512 KB` 分块流式读取（完整支持 `HTTP 206 Partial Content` 断点续传与视频边下边播）。
+2. **本地持久化与一键彻底擦除**：日常开关窗口自动保留历史记录（存放于本地 `data/` 目录，Git 自动忽略）；点击右上角 **「清空」** 时，双端列表与本地 `data/` 历史数据、二进制缓存同步 **100% 物理删除**，不留任何残余。
 
 ---
 
 ## 二、 界面预览
 
-| 空状态（拖入或选择文件） | 待发送队列（实时进度与状态） | 手机连接弹窗（扫码与接口地址） |
-| :---: | :---: | :---: |
-| <img src="assets/preview_empty.png" width="260" alt="空状态"> | <img src="assets/preview_queue.png" width="260" alt="传输队列"> | <img src="assets/preview_modal.png" width="260" alt="手机连接"> |
+| 空状态（极简待命） | 双向对话与草稿粘贴 | 毛玻璃扫码连接 | 独立看图与顶栏框选标注 |
+| :---: | :---: | :---: | :---: |
+| <img src="assets/preview_empty.png" width="205" alt="空状态"> | <img src="assets/preview_queue.png" width="205" alt="双向对话与草稿粘贴"> | <img src="assets/preview_modal.png" width="205" alt="手机扫码连接"> | <img src="assets/preview_viewer.png" width="205" alt="看图与顶栏框选编辑"> |
 
 ---
 
-## 三、 电脑端安装与启动
+## 三、 电脑端安装与日常使用
 
-### 1. 环境准备
-- 系统：Windows 10 / 11
-- 环境：Python 3.10 及以上
-- 网络：电脑与 iPhone 连接在**同一个 Wi-Fi 局域网**下（电脑插网线、手机连同一台路由器的 Wi-Fi 亦可）。
+### 1. 安装依赖并生成桌面图标
+- **环境要求**：Windows 10 / 11，Python 3.10+，电脑与 iPhone 处于同一路由器局域网（电脑有线、手机连 Wi-Fi 亦可）。
 
-### 2. 安装依赖并创建桌面图标
 ```powershell
-# 1. 克隆仓库
+# 1. 克隆仓库并进入目录
 git clone https://github.com/aodilab/FileHelper.git
 cd FileHelper
 
 # 2. 安装依赖
 pip install -r requirements.txt
 
-# 3. 在 Windows 桌面自动生成 FileHelper 快捷方式图标
+# 3. 生成应用图标并在 Windows 桌面创建「文件传输助手」快捷方式
 python build.py --shortcut
 
-# 4. 启动程序
+# 4. 启动桌面端
 python build.py
 ```
 
-生成桌面快捷方式后，日常使用有两种投递方式：
-1. **窗口内投递**：双击桌面 `FileHelper` 图标打开窗口，将视频或照片拖入窗口。
-2. **桌面图标直接投递**：直接把电脑上的视频或照片**拖拽到桌面的 `FileHelper` 快捷方式图标上**，程序会自动启动（或唤醒已有窗口）并将文件加入待发送队列。
+### 2. 电脑端高频交互
+- **发文件 / 文件夹**：点击左下角 `+` 选择，或直接将文件拖拽进窗口，亦可直接把文件拖到桌面的 **「文件传输助手」图标** 上（单实例自动唤醒并入队）。
+- **发截图（微信同款草稿预览）**：截图后按 `Ctrl+V`，缩略草稿图直接嵌入底部输入框内（可点击放大预览/标注，按 `Backspace` 或点右上角 `×` 移除，按 `Enter` 或点「发送」发出）。
+- **发文字 / 网址**：底部输入框输入或粘贴文本，回车即发；点击任意文字气泡一键复制。
+- **独立看图与框选编辑**：点击聊天流中的任意图片打开独立查看器（滚轮指针缩放、双击 `1:1`、左右键切图）；点击顶栏 **编辑图标** 原地切换为微信 PC 风格单排工具栏（方框、圆框、箭头、画笔、马赛克、裁剪、撤销、另存为），点击 **「完成」** 自动写入系统剪贴板。
 
 ---
 
-## 四、 iPhone 端接收方法（两种方式任选）
+## 四、 iPhone 端连接与收发方式
 
-### 方式一：iOS「快捷指令」一键直存系统相册（推荐，配置一次长期使用）
-
-利用 iOS 系统自带的「快捷指令（Shortcuts）」，只需配置 2 个动作，后续在手机桌面点一下图标即可把电脑队列中的视频/照片直接存入系统相册：
-
-1. 点击电脑端窗口右上角 **「手机连接」**，点击 **「复制网址」** 获取本机接口地址（形如 `http://192.168.1.2:8899/api/latest`）。
-2. 打开 iPhone 自带的 **「快捷指令」** App，点击右上角 **`+`** 新建指令：
-   - **第 1 步**：搜索并添加动作 **「获取 URL 的内容」**（Get Contents of URL），将地址替换为刚才复制的 `http://<你的电脑局域网IP>:8899/api/latest`。
-   - **第 2 步**：搜索并添加动作 **「存储到相簿」**（Save to Photo Album），保持默认参数「将 `URL 的内容` 存储到 `最近项目`」。
-3. 点击顶部指令名称可重命名（如「收电脑原片」），点击下方分享按钮选择 **「添加到主屏幕」**。
-
-> **日常使用流程**：电脑上把视频拖进 FileHelper $\rightarrow$ 手机桌面点一下该快捷指令图标 $\rightarrow$ 视频直接无损存入 iPhone 相册。  
-> *(注：首次运行快捷指令时，iOS 顶部会弹出「允许连接局域网设备」和「允许访问照片」权限提示，点击「始终允许」即可。)*
-
----
-
-### 方式二：iPhone 相机扫码网页端下载（免配置）
-
-如果不配置快捷指令，也可以直接通过手机浏览器下载：
+### 方式一：Safari 扫码 / 添加到主屏幕（推荐，完整双向聊天体验）
 1. 点击电脑端右上角 **「手机连接」** 打开二维码弹窗；
-2. 打开 iPhone 原生相机对准二维码扫描，点击顶部黄条在 **Safari** 中打开；
-3. 网页会列出当前电脑端所有待发送文件：
-   - 单个文件：点击右侧 **「原画保存 ›」**；
-   - 多个文件：点击底部 **「打包下载全部」**。
+2. 用 iPhone 原生相机扫码并在 **Safari** 中打开（可点击 Safari 底部分享按钮 → **「添加到主屏幕」**，获得独立全屏 Web App 图标）；
+3. **手机端交互**：
+   - **发原图 / 视频 / 文件**：点击左下角 `+` 展开底部面板（`照片` / `拍摄` / `文件`），在深色 4 列选图器中勾选或预览编辑后点击 **「发送」**，默认 100% 原始画质上传；
+   - **收图片 / 改图 / 删记录**：轻点图片全屏查看，**长按任意气泡或图片** 呼出微信同款深色菜单（`保存到相册` / `复制` / `编辑` / `下载` / `删除`）。
+
+### 方式二：iOS「快捷指令」桌面一键直存相册（适合批量收电脑原片）
+只需配置 2 个动作，点击手机桌面指令图标即可把电脑队列中的待发视频/原图直接无损存入系统相册：
+1. 打开 iPhone **「快捷指令」** App，点击右上角 `+` 新建指令：
+   - **动作 1**：添加 **「获取 URL 的内容」**，地址填 `http://<电脑局域网IP>:8899/api/latest`；
+   - **动作 2**：添加 **「存储到相簿」**（将 `URL 的内容` 存储到 `最近项目`）。
+2. 重命名并选择 **「添加到主屏幕」**，首次运行允许局域网与照片权限即可。
 
 ---
 
-## 五、 目录结构与命令说明
+## 五、 目录架构与命令速查
 
 ```text
 ├── build.py                   # 统一启动与构建入口
-├── requirements.txt           # Python 依赖声明 (Pillow / qrcode / tkinterdnd2 / pywin32)
+├── requirements.txt           # 运行依赖 (Pillow / qrcode / tkinterdnd2 / pywin32)
 ├── config/
-│   └── settings.py            # 端口、窗口尺寸、分块大小与色彩配置
+│   └── settings.py            # 端口、窗口尺寸、MIME 兜底映射、校准色彩 Token 与行数红线
 ├── src/
 │   ├── core/
-│   │   ├── queue_manager.py   # 线程安全零拷贝文件队列与单实例 IPC 唤醒
-│   │   └── http_server.py     # 多线程 HTTP Range 206 流服务与 /api/latest 接口
+│   │   ├── queue_manager.py   # 线程安全队列、data/ 本地持久化、系统剪贴板与单实例 IPC
+│   │   └── http_server.py     # 端口独占保护、HTTP 206 Range 分块流与双向 REST 接口
 │   └── ui/
-│       ├── components.py      # 2x 超采样抗锯齿绘图原语与矢量图标
-│       ├── renderer.py        # 主视图与毛玻璃连接弹窗渲染器
-│       └── desktop_app.py     # TkinterDnD 窗口控制与主线程状态轮询
+│       ├── components.py      # 2x 超采样抗锯齿绘图原语与圆角缩略图缓存
+│       ├── chat_items.py      # 聊天气泡、自适应图片缩略图、双行文件卡片与悬停动作排版
+│       ├── renderer.py        # 桌面主窗口、输入框草稿图与毛玻璃扫码弹窗渲染器
+│       ├── desktop_app.py     # TkinterDnD 窗口控制、剪贴板监听与版本号状态轮询
+│       ├── image_viewer.py    # 微信风独立图片查看器（对称留白、滚轮缩放、自适应居中）
+│       └── image_editor.py    # 顶栏单排矢量标注与裁剪会话（方框/圆框/箭头/画笔/马赛克/裁剪）
 ├── templates/
-│   └── mobile_portal.html     # iPhone Safari 移动端接收页模板
+│   └── mobile_portal.html     # iPhone Safari / Web App 双向门户、4 列选图器与画布编辑器
 ├── scripts/
-│   ├── icon_builder.py        # 图标生成与 Windows 桌面快捷方式构建
-│   └── visual_audit.py        # 三态界面快照生成与代码行数校验
+│   ├── icon_builder.py        # 多尺寸 ICO/PNG/iOS Touch Icon 与桌面快捷方式生成
+│   └── visual_audit.py        # 桌面五态快照渲染、README 预览图同步与代码行数审计
 └── assets/                    # 应用图标与界面预览图
 ```
 
-| 命令 | 作用 |
+| 命令 | 说明 |
 | :--- | :--- |
-| `python build.py` | 启动 FileHelper 桌面端窗口 |
-| `python build.py <文件路径...>` | 启动或唤醒现有窗口，并将指定文件加入发送队列 |
-| `python build.py --shortcut` | 在 Windows 桌面创建 `FileHelper.lnk` 快捷方式 |
-| `python build.py --icon` | 重新生成 `assets/` 下的多分辨率图标 |
-| `python build.py --audit` | 生成三态界面快照并校验工程模块代码行数 |
-| `python build.py --all` | 依次执行图标生成、快捷方式创建与自审校验 |
+| `python build.py` | 启动桌面端（若已有实例运行则自动前置唤醒） |
+| `python build.py <文件路径...>` | 启动或唤醒现有窗口，并将指定文件/文件夹加入队列 |
+| `python build.py --shortcut` | 在 Windows 桌面创建 `文件传输助手.lnk` 快捷方式 |
+| `python build.py --icon` | 重新生成 `assets/` 下的多尺寸桌面与 iOS 图标 |
+| `python build.py --audit` | 生成桌面五态自审快照并校验全项目代码行数规范 |
+| `python build.py --all` | 依次执行图标生成、快捷方式更新、README 预览图同步与代码审计 |
 
 ---
 
 ## 六、 常见问题排查
 
-1. **手机扫码打不开网页，或点击快捷指令提示连接超时？**
-   - 请确认电脑和 iPhone 连接在同一个局域网下；
-   - 检查电脑的 Windows 防火墙网络类型：如果当前 Wi-Fi 在 Windows 中被设为「公用网络（Public Network）」，防火墙可能拦截局域网 `8899` 端口访问。可在 Windows 设置中将该 Wi-Fi 改为「专用网络（Private Network）」，或在防火墙入站规则中放行 Python / `8899` 端口。
-2. **电脑 IP 地址变化或本地端口冲突怎么办？**
-   - **IP 变动**：若路由器重启导致电脑局域网 IP 变动（窗口顶部标题栏会实时显示当前 IP），在手机快捷指令中将 IP 修正为新地址即可；
-   - **端口防占与独占保护**：为确保 iPhone 快捷指令中的固定端口（`8899`）永久有效，FileHelper 启动时若检测到 `8899` 端口被其他非本程序进程占用，会自动清理冲突进程并夺回 `8899` 端口；运行期间开启 Windows 内核级 `SO_EXCLUSIVEADDRUSE` 独占锁，防止 Node.js 等第三方服务通过 `SO_REUSEADDR` 劫持端口。
-
----
-
-## 七、 最近修复记录
-
-- **修复端口冲突导致 iPhone 快捷指令失效问题**：
-  - 移除原先遇到端口占用时静默顺延至 `8900` 端口的逻辑（顺延会导致手机端已配置的 `8899` 快捷指令返回 404）；
-  - 新增启动端口自动接管机制（`_reclaim_port`），启动时若 `8899` 被其他本地进程占用，自动终止占用进程并锁定 `8899` 端口；
-  - 在 `ThreadedHTTPServer` 中启用 Windows `socket.SO_EXCLUSIVEADDRUSE` 套接字独占锁，阻止其他进程在 FileHelper 运行期间抢占同一端口。
-- **修复 iOS 相册接收图片/视频的流式传输与 MIME 识别问题**：
-  - 补全 `.jpg` / `.jpeg` / `.png` / `.heic` / `.heif` / `.webp` / `.gif` / `.mp4` / `.mov` 的显式 MIME 映射兜底，避免因 Windows 注册表缺失 MIME 类型导致 iOS「存储到相簿」拒绝保存；
-  - 统一文件扩展名小写化处理，修复 `HTTP 206 Partial Content` 分片流传输时的文件字节长度计算。
+1. **手机扫码打不开网页，或快捷指令提示连接超时？**
+   - 确认电脑与 iPhone 连接在同一局域网下（未开启 AP 隔离或全局 TUN 代理拦截局域网流量）；
+   - 若 Windows 将当前 Wi-Fi 识别为「公用网络」，系统防火墙可能拦截 `8899` 端口入站请求。可在 Windows 网络设置中将其切换为 **「专用网络」**，或在防火墙入站规则中放行 Python / `8899` 端口。
+2. **固定端口 `8899` 被其他本地进程占用怎么办？**
+   - FileHelper 启动时会自动检测并清理占用 `8899` 的非本程序残留进程（`_reclaim_port`），同时开启 Windows 内核级 `SO_EXCLUSIVEADDRUSE` 套接字独占锁，确保手机书签与快捷指令中的 `:8899` 地址长期稳定可用。

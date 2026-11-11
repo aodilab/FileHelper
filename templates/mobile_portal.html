@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#F7F7F7"><meta name="color-scheme" content="light">
   <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="传输助手">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2"><link rel="icon" type="image/png" sizes="180x180" href="/apple-touch-icon.png?v=2"><link rel="manifest" href="/manifest.webmanifest?v=2">
@@ -10,63 +9,54 @@
   <style>
     :root { --bg: #EDEDED; --bar: #F7F7F7; --line: #DCDCDC; --green: #95EC69; --wx: #07C160; --ink: #111; --sub: #8E8E93; --link: #576B95; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bar); color: var(--ink); font-size: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", sans-serif; }
-    #pwa-safepill { position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bar); z-index: 2147483647; pointer-events: none; transform: translateZ(0); }
+    html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bar); color: var(--ink); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", sans-serif; }
+    #pwa-safepill { position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bar); z-index: 50; pointer-events: none; transform: translateZ(0); }
     .app { position: fixed; top: 0; left: 0; right: 0; height: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
-    .top-bar { position: relative; z-index: 2; flex: none; height: 46px; background: var(--bar); border-bottom: 0.5px solid var(--line);
-      display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 0 8px; }
-    .top-title { grid-column: 2; text-align: center; font-size: 17px; font-weight: 500; }
-    .btn-clear { grid-column: 3; justify-self: end; border: none; background: none; color: var(--link); font-size: 15px; padding: 6px 8px; }
-    .chat-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 12px 14px; display: flex; flex-direction: column; }
-    .chip { align-self: center; margin: 14px 0 4px; font-size: 12px; color: var(--sub); }
-    .row { display: flex; flex-direction: column; max-width: 74%; margin-top: 12px; }
+    .top-bar { position: relative; z-index: 2; flex: none; height: 46px; background: var(--bar); border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 0 8px; }
+    .top-title { grid-column: 2; text-align: center; font-size: 17px; font-weight: 500; } .btn-clear { grid-column: 3; justify-self: end; border: none; background: none; color: var(--link); font-size: 15px; padding: 6px 8px; }
+    .chat-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; padding: 6px 12px 16px; display: flex; flex-direction: column; }
+    .chip { align-self: center; margin: 20px 0 2px; font-size: 12px; color: var(--sub); } .chip:first-child { margin-top: 8px; }
+    .row { display: flex; flex-direction: column; max-width: 74%; margin-top: 12px; } .row:first-child { margin-top: 6px; }
     .row.mine { align-self: flex-end; align-items: flex-end; } .row.theirs { align-self: flex-start; align-items: flex-start; }
-    .bubble { position: relative; background: #fff; padding: 9px 12px; border-radius: 6px; font-size: 16px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; }
-    .row.mine .bubble { background: var(--green); }
-    .bubble::after { content: ""; position: absolute; top: 13px; border: 6px solid transparent; }
-    .row.mine .bubble::after { right: -11px; border-left-color: var(--green); } .row.theirs .bubble::after { left: -11px; border-right-color: #fff; }
-    .bubble:active, .file:active, .pic:active { opacity: 0.85; }
-    .pic { display: block; border-radius: 6px; background: #DADADA; object-fit: cover; }
-    .file { display: flex; align-items: center; gap: 12px; width: 232px; background: #fff; border-radius: 8px; padding: 12px 12px 12px 14px;
-      text-decoration: none; color: inherit; position: relative; overflow: hidden; }
-    .file-info { flex: 1; min-width: 0; }
+    .bubble { position: relative; background: #fff; padding: 9px 12px; border-radius: 6px; font-size: 16px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; } .row.mine .bubble { background: var(--green); }
+    .bubble::after { content: ""; position: absolute; top: 13px; border: 6px solid transparent; } .row.mine .bubble::after { right: -11px; border-left-color: var(--green); } .row.theirs .bubble::after { left: -11px; border-right-color: #fff; }
+    .bubble:active, .file:active, .pic:active { opacity: 0.84; } .pic { display: block; border-radius: 5px; background: #DADADA; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06); }
+    .file { display: flex; align-items: center; gap: 12px; width: 232px; background: #fff; border-radius: 8px; padding: 12px 12px 12px 14px; text-decoration: none; color: inherit; position: relative; overflow: hidden; }
+    .file-info { flex: 1; min-width: 0; } .file-sub { margin-top: 4px; font-size: 12px; color: var(--sub); }
     .file-name { font-size: 15px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
-    .file-sub { margin-top: 4px; font-size: 12px; color: var(--sub); }
-    .badge { flex: none; width: 36px; height: 42px; border-radius: 5px; color: #fff; font-size: 10px; font-weight: 600;
-      display: flex; align-items: center; justify-content: center; background: #8E8E93; } .badge.video { background: #5884F5; }
+    .badge { flex: none; width: 36px; height: 42px; border-radius: 5px; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; background: #8E8E93; } .badge.video { background: #5884F5; }
     .bar { position: absolute; left: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--wx); transition: width 0.3s; }
-    .meta { margin-top: 5px; font-size: 12px; color: var(--link); padding: 0 2px; }
-    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 8px;
-      padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); } .app.kb .composer { padding: 6px 10px; }
-    .btn-plus { flex: none; width: 34px; height: 34px; margin-bottom: 2px; border-radius: 50%; border: 1.5px solid #3A3A3C; background: none;
-      font-size: 22px; font-weight: 300; line-height: 1; color: #3A3A3C; display: flex; align-items: center; justify-content: center; }
-    .input-wrap { position: relative; flex: 1; min-width: 0; min-height: 38px; background: #fff; border-radius: 6px; display: flex; }
-    .kb-shield { position: absolute; inset: 0; z-index: 3; } .app.kb .kb-shield { display: none; }
-    .input-box { width: 100%; height: 38px; max-height: 110px; padding: 8px 10px; border-radius: 6px; border: none; background: transparent;
-      font-size: 16px; font-family: inherit; line-height: 1.38; resize: none; outline: none; overflow-y: auto; }
+    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 8px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); } .app.kb .composer, .app.plus .composer { padding: 7px 10px; }
+    .btn-plus { flex: none; width: 34px; height: 34px; margin-bottom: 2px; border-radius: 50%; border: 1.5px solid #2C2C2E; background: none; font-size: 23px; font-weight: 300; line-height: 1; color: #2C2C2E; display: flex; align-items: center; justify-content: center; transition: transform 0.18s; } .app.plus .btn-plus { transform: rotate(45deg); }
+    .input-wrap { position: relative; flex: 1; min-width: 0; min-height: 38px; background: #fff; border-radius: 6px; display: flex; } .kb-shield { position: absolute; inset: 0; z-index: 3; } .app.kb .kb-shield { display: none; }
+    .input-box { width: 100%; height: 38px; max-height: 110px; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; font-size: 16px; font-family: inherit; line-height: 1.38; resize: none; outline: none; overflow-y: auto; }
     .input-box.focusing { position: fixed; top: 0; left: 0; width: 20px; height: 20px; opacity: 0; pointer-events: none; }
-    .btn-send { flex: none; height: 34px; margin-bottom: 2px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx);
-      color: #fff; font-size: 15px; font-weight: 500; display: none; } .composer.typing .btn-send { display: block; }
-    .sheet { position: fixed; inset: 0; z-index: 100; background: #111; color: #fff; display: none; flex-direction: column; } .sheet.open { display: flex; }
-    .sheet-top { flex: none; height: 50px; display: grid; grid-template-columns: 70px 1fr 70px; align-items: center; padding: 0 6px; }
-    .sheet-top button { border: none; background: none; color: #fff; font-size: 16px; padding: 8px 10px; justify-self: start; }
-    .sheet-top span { text-align: center; font-size: 17px; font-weight: 500; }
-    .sheet-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 8px; }
-    .sheet-body > img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
-    .grid { width: 100%; align-self: flex-start; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-    .grid > * { aspect-ratio: 1; width: 100%; object-fit: cover; background: #2C2C2E; border-radius: 3px; display: flex; align-items: center;
-      justify-content: center; font-size: 12px; color: #aaa; padding: 6px; word-break: break-all; text-align: center; overflow: hidden; }
-    .sheet-file { color: #ddd; font-size: 15px; text-align: center; word-break: break-all; padding: 0 20px; }
-    .sheet-bottom { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
-    .sheet-bottom span { font-size: 13px; color: #aaa; }
-    .sheet-bottom button { height: 36px; padding: 0 22px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 16px; font-weight: 500; }
-    .viewer { position: fixed; inset: 0; background: #000; z-index: 150; display: none; align-items: center; justify-content: center; } .viewer.open { display: flex; }
-    .viewer img { max-width: 100%; max-height: 88%; object-fit: contain; -webkit-touch-callout: default; }
-    .viewer p { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); color: rgba(255,255,255,0.6); font-size: 13px; }
-    .toast { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); background: rgba(17,17,17,0.82); color: #fff;
-      padding: 10px 18px; border-radius: 8px; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 200; } .toast.show { opacity: 1; }
+    .btn-send { flex: none; height: 34px; margin-bottom: 2px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 15px; font-weight: 500; display: none; } .composer.typing .btn-send { display: block; }
+    .plus-panel { flex: none; display: none; grid-template-columns: repeat(4, 1fr); gap: 14px; background: var(--bar); border-top: 0.5px solid var(--line); padding: 20px 22px calc(22px + env(safe-area-inset-bottom, 0px)); } .app.plus .plus-panel { display: grid; }
+    .p-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 12px; color: #666; cursor: pointer; } .p-item input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
+    .p-ico { width: 58px; height: 58px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; color: #2C2C2E; } .p-item:active .p-ico { background: #E5E5EA; }
+    .ctx { position: fixed; z-index: 140; background: #38383A; color: #fff; border-radius: 8px; padding: 2px 4px; display: none; align-items: center; box-shadow: 0 6px 20px rgba(0,0,0,0.22); } .ctx.open { display: flex; }
+    .ctx button { border: none; background: none; color: #fff; font-size: 13px; padding: 8px 12px; white-space: nowrap; position: relative; } .ctx button + button::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 0.5px; background: rgba(255,255,255,0.18); }
+    .ctx-arr { position: absolute; width: 10px; height: 10px; background: #38383A; transform: rotate(45deg); bottom: -4px; } .ctx.below .ctx-arr { bottom: auto; top: -4px; }
+    .sheet { position: fixed; inset: 0; z-index: 150; background: #111; color: #fff; display: none; flex-direction: column; } .sheet.open { display: flex; }
+    .sheet-top { flex: none; height: 52px; background: #191919; display: grid; grid-template-columns: 72px 1fr 72px; align-items: center; padding: 0 8px; }
+    .sheet-close { border: none; background: none; color: #fff; font-size: 24px; line-height: 1; padding: 8px; justify-self: start; } .sheet-pill { justify-self: center; background: #2C2C2E; color: #E5E5EA; font-size: 14px; font-weight: 500; padding: 5px 14px; border-radius: 16px; }
+    .sheet-top-r { justify-self: end; padding-right: 6px; display: flex; align-items: center; }
+    .sheet-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: flex-start; justify-content: center; } .sheet-body.single { align-items: center; padding: 8px; } .sheet-body.single > img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px; } .tile { position: relative; aspect-ratio: 1; background: #242426; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .tile img { width: 100%; height: 100%; object-fit: cover; display: block; } .tile.sel::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.22); pointer-events: none; }
+    .tile-f { font-size: 11px; color: #ccc; padding: 6px; text-align: center; word-break: break-all; line-height: 1.3; } .tile-add { color: #8E8E93; font-size: 30px; font-weight: 300; } .tile-add input { position: absolute; inset: 0; opacity: 0; }
+    .chk-hit { position: absolute; top: 0; right: 0; width: 38px; height: 38px; z-index: 2; display: flex; align-items: flex-start; justify-content: flex-end; padding: 5px; }
+    .chk { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.88); background: rgba(0,0,0,0.28); color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; } .chk.on { background: var(--wx); border-color: var(--wx); }
+    .sheet-bottom { flex: none; background: #191919; border-top: 0.5px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+    .sh-acts { display: flex; gap: 18px; } .sh-acts button { border: none; background: none; color: #fff; font-size: 15px; padding: 4px 0; } .sh-acts button:disabled { color: #555; }
+    .btn-go { height: 34px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 15px; font-weight: 500; } .btn-go:disabled { background: #2C2C2E; color: #666; }
+    .viewer, .editor { position: fixed; inset: 0; background: #000; z-index: 160; display: none; flex-direction: column; align-items: center; justify-content: center; } .viewer.open, .editor.open { display: flex; }
+    .viewer img { max-width: 96%; max-height: 82%; object-fit: contain; -webkit-touch-callout: default; user-select: auto; } #edCv { max-width: 96%; max-height: 74%; touch-action: none; background: #111; }
+    .viewer-bar, .ed-top, .ed-bot { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; color: #fff; font-size: 14px; }
+    .viewer-bar, .ed-bot { bottom: 0; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, rgba(0,0,0,0.8)); } .ed-top { top: 0; padding-top: calc(12px + env(safe-area-inset-top, 0px)); background: linear-gradient(rgba(0,0,0,0.7), transparent); }
+    .viewer-acts, .ed-tools { display: flex; align-items: center; gap: 16px; } .viewer-acts button, .ed-top button, .ed-tools button { border: none; background: none; color: #fff; font-size: 15px; padding: 4px 2px; } .ed-tools button.on { color: var(--wx); font-weight: 600; }
+    .toast { position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%); background: rgba(25,25,25,0.88); color: #fff; white-space: nowrap; padding: 10px 16px; border-radius: 8px; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 220; } .toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -75,175 +65,175 @@
     <div class="top-bar"><span class="top-title">文件传输助手</span><button class="btn-clear" id="btnClear" type="button">清空</button></div>
     <main class="chat-list" id="chatList"></main>
     <footer class="composer" id="composer">
-      <input type="file" id="fileInput" multiple accept="image/*,video/*,*/*" style="display:none">
-      <button class="btn-plus" id="btnPlus" type="button" aria-label="发送图片或文件">+</button>
+      <button class="btn-plus" id="btnPlus" type="button" aria-label="更多">+</button>
       <div class="input-wrap"><div class="kb-shield" id="kbShield"></div><textarea class="input-box" id="textInput" rows="1" enterkeyhint="send"></textarea></div>
       <button class="btn-send" id="btnSend" type="button">发送</button>
     </footer>
+    <section class="plus-panel" id="plusPanel">
+      <label class="p-item"><span class="p-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.8-4.5L7 20"/></svg></span><span>照片</span><input type="file" id="inPhoto" multiple accept="image/*,video/*"></label>
+      <label class="p-item"><span class="p-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7.5h3l1.6-2h6.8l1.6 2h3A1.8 1.8 0 0121.8 9.3v8.9a1.8 1.8 0 01-1.8 1.8H4a1.8 1.8 0 01-1.8-1.8V9.3A1.8 1.8 0 014 7.5z"/><circle cx="12" cy="13.5" r="3.4"/></svg></span><span>拍摄</span><input type="file" id="inCam" accept="image/*,video/*" capture="environment"></label>
+      <label class="p-item"><span class="p-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 6.5A1.8 1.8 0 015.3 4.7h4.3l2 2.1h7.1a1.8 1.8 0 011.8 1.8v9.1a1.8 1.8 0 01-1.8 1.8H5.3a1.8 1.8 0 01-1.8-1.8z"/></svg></span><span>文件</span><input type="file" id="inFile" multiple accept="*/*"></label>
+    </section>
   </div>
-  <div class="sheet" id="sheet">
-    <div class="sheet-top"><button id="btnCancelSend" type="button">取消</button><span id="sheetTitle">发送给电脑</span></div>
-    <div class="sheet-body" id="sheetBody"></div>
-    <div class="sheet-bottom"><span id="sheetInfo"></span><button id="btnConfirmSend" type="button">发送</button></div>
-  </div>
-  <div class="viewer" id="viewer"><img id="viewerImg" alt=""><p>长按图片可存到相册，轻点关闭</p></div>
+  <div class="ctx" id="ctxMenu"><div class="ctx-arr" id="ctxArr"></div><div id="ctxBtns" style="display:flex"></div></div>
+  <div class="sheet" id="sheet"><div class="sheet-top"><button class="sheet-close" id="btnSheetLeft" type="button">×</button><span class="sheet-pill" id="sheetTitle">已选项目</span><div class="sheet-top-r" id="sheetTopR"></div></div><div class="sheet-body" id="sheetBody"></div><div class="sheet-bottom"><div class="sh-acts" id="sheetActs"></div><button class="btn-go" id="btnConfirmSend" type="button">发送</button></div></div>
+  <div class="viewer" id="viewer"><img id="viewerImg" alt=""><div class="viewer-bar"><span style="color:rgba(255,255,255,0.75);font-size:13px">长按图片可存相册</span><div class="viewer-acts"><button id="viewerEdit" type="button">编辑</button><button id="viewerSave" type="button">保存</button><button id="viewerClose" type="button">关闭</button></div></div></div>
+  <div class="editor" id="editor" style="z-index:180"><div class="ed-top"><button id="edCancel" type="button">取消</button><button id="edUndo" type="button">撤销</button></div><canvas id="edCv"></canvas><div class="ed-bot"><div class="ed-tools" id="edTools"><button type="button" data-t="pen" class="on">画笔</button><button type="button" data-t="rect">方框</button><button type="button" data-t="mosaic">马赛克</button><button type="button" data-t="crop">裁剪</button><button type="button" id="edRot">旋转</button></div><button class="btn-go" id="edDone" type="button">完成</button></div></div>
   <div class="toast" id="toast"></div>
   <script>
-    const $ = (id) => document.getElementById(id);
-    const app = $('app'), list = $('chatList'), textInput = $('textInput'), fileInput = $('fileInput'), composer = $('composer'), vv = window.visualViewport;
-    const VIDEO_RE = /\.(mp4|mov|m4v|mkv|avi)$/i;
-    let rendered = new Map(), lastTs = null, pendingFiles = [], toastTimer = null, stick = true, pageVer = null, busy = false;
-
-    function showToast(msg, keep) {
-      const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer);
-      if (!keep) toastTimer = setTimeout(() => t.classList.remove('show'), 1400);
-    }
-    function fallbackCopy(t, done) {
-      const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); done(); } catch (_) {} document.body.removeChild(ta);
-    }
-    function copyText(t) {
-      const done = () => showToast('已复制');
-      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done));
-      fallbackCopy(t, done);
-    }
-    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-    const fmtSize = (n) => n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
+    const $ = (id) => document.getElementById(id), el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+    const app = $('app'), list = $('chatList'), textInput = $('textInput'), composer = $('composer'), vv = window.visualViewport;
+    const VIDEO_RE = /\.(mp4|mov|m4v|mkv|avi)$/i, isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let rendered = new Map(), itemsMap = new Map(), lastTs = null, pending = [], sheetIdx = -1, curView = null, toastTimer = null, stick = true, pageVer = null, busy = false, plusOpen = false, lpTimer = null, lpFired = false;
+    const showToast = (m, keep) => { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastTimer); if (!keep) toastTimer = setTimeout(() => t.classList.remove('show'), 1400); };
+    const copyText = (t) => { const ok = () => showToast('已复制'), fb = () => { const a = el('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (_) {} a.remove(); }; (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(t).then(ok).catch(fb) : fb(); };
     const chipText = (ts) => { const d = new Date(ts * 1000), hm = d.toTimeString().slice(0, 5); return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}月${d.getDate()}日 ${hm}`; };
-    const fileSub = (it, isMine) => { const st = it.status || ''; return st.includes('传输') ? `${it.size_str} · ${st}` : st === '已完成' ? `${it.size_str} · ${isMine ? '已发送' : '已接收'}` : (isMine ? it.size_str : `${it.size_str} · 轻点下载`); };
+    const fileSub = (it, m) => { const s = it.status || ''; return s.includes('传输') ? `${it.size_str} · ${s}` : s === '已完成' ? `${it.size_str} · ${m ? '已发送' : '已接收'}` : (m ? it.size_str : `${it.size_str} · 轻点下载`); };
+    const toBottom = () => { list.scrollTop = list.scrollHeight; }, setPlus = (on) => { plusOpen = on; app.classList.toggle('plus', on); if (on) toBottom(); }, hideCtx = () => $('ctxMenu').classList.remove('open', 'below');
 
-    /* ---------- 视口与键盘：唤醒瞬间将焦点锚定在顶部 (0,0)，阻断 iOS 整页上推，底部单次平滑升起 ---------- */
-    const toBottom = () => { list.scrollTop = list.scrollHeight; };
-    const EASE = { duration: 250, easing: 'cubic-bezier(0.32,0.72,0,1)' };
-    let fullH = window.innerHeight, kbH = +localStorage.getItem('ad_kbh') || Math.round(fullH * 0.48), kbActive = false, touchY = 0, focusTimer = null;
+    let fullH = window.innerHeight, kbH = +localStorage.getItem('fh_kbh') || Math.round(fullH * 0.48), kbActive = false, touchY = 0, focusTimer = null;
+    const EASE = { duration: 240, easing: 'cubic-bezier(0.32,0.72,0,1)' };
     function fit() {
       const rawH = vv ? vv.height : window.innerHeight, kbOpen = rawH < screen.height - 220;
-      if (kbOpen) { kbH = rawH; localStorage.setItem('ad_kbh', kbH); } else if (!kbActive) { fullH = rawH; }
-      app.style.height = (kbActive || kbOpen ? kbH : fullH) + 'px';
-      app.classList.toggle('kb', kbActive || kbOpen); if (stick) toBottom();
+      if (kbOpen) { kbH = rawH; localStorage.setItem('fh_kbh', kbH); } else if (!kbActive) fullH = rawH;
+      app.style.height = (kbActive || kbOpen ? kbH : fullH) + 'px'; app.classList.toggle('kb', kbActive || kbOpen); if (stick) toBottom();
     }
     function openKb() {
-      if (kbActive) return;
-      kbActive = true; stick = true;
-      const prevH = app.offsetHeight;
-      textInput.classList.add('focusing'); void textInput.offsetHeight; textInput.focus();
+      hideCtx(); if (plusOpen) setPlus(false); if (kbActive) return;
+      kbActive = true; stick = true; const prevH = app.offsetHeight; textInput.classList.add('focusing'); void textInput.offsetHeight; textInput.focus();
       app.classList.add('kb'); app.style.height = kbH + 'px'; toBottom();
       if (prevH - kbH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: kbH + 'px' }], EASE);
-      clearTimeout(focusTimer); focusTimer = setTimeout(() => { textInput.classList.remove('focusing'); fit(); }, 280);
+      clearTimeout(focusTimer); focusTimer = setTimeout(() => { textInput.classList.remove('focusing'); fit(); }, 260);
     }
     if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', () => window.scrollTo(0, 0)); }
-    window.addEventListener('resize', fit);
-    list.addEventListener('scroll', () => { stick = list.scrollHeight - list.scrollTop - list.clientHeight < 60; }, { passive: true });
-    $('kbShield').addEventListener('touchend', (e) => { e.preventDefault(); openKb(); });
-    $('kbShield').addEventListener('click', openKb);
-    textInput.addEventListener('focus', openKb);
-    textInput.addEventListener('blur', () => {
-      kbActive = false; clearTimeout(focusTimer); textInput.classList.remove('focusing');
-      const prevH = app.offsetHeight; window.scrollTo(0, 0); fit();
-      if (fullH - prevH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: fullH + 'px' }], EASE);
-    });
+    window.addEventListener('resize', fit); list.addEventListener('scroll', () => { hideCtx(); stick = list.scrollHeight - list.scrollTop - list.clientHeight < 60; }, { passive: true });
+    $('kbShield').addEventListener('touchend', (e) => { e.preventDefault(); openKb(); }); $('kbShield').addEventListener('click', openKb); textInput.addEventListener('focus', openKb);
+    textInput.addEventListener('blur', () => { kbActive = false; clearTimeout(focusTimer); textInput.classList.remove('focusing'); const prevH = app.offsetHeight; window.scrollTo(0, 0); fit(); const nextH = app.offsetHeight; if (nextH - prevH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: nextH + 'px' }], EASE); });
+    $('btnPlus').onclick = () => { hideCtx(); const next = !plusOpen; if (document.activeElement === textInput) textInput.blur(); setPlus(next); };
     list.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
-    list.addEventListener('touchmove', (e) => { if (document.activeElement === textInput && Math.abs(e.touches[0].clientY - touchY) > 8) textInput.blur(); }, { passive: true });
-    list.addEventListener('click', (e) => { if (!e.target.closest('.bubble, .pic, .file, .meta')) textInput.blur(); });
-    document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list, .sheet-body, .input-box')) e.preventDefault(); }, { passive: false });
+    list.addEventListener('touchmove', (e) => { if (Math.abs(e.touches[0].clientY - touchY) > 8) { clearTimeout(lpTimer); if (document.activeElement === textInput) textInput.blur(); if (plusOpen) setPlus(false); } }, { passive: true });
+    list.addEventListener('click', (e) => { if (lpFired) { lpFired = false; return; } hideCtx(); if (!e.target.closest('.bubble,.pic,.file')) { textInput.blur(); if (plusOpen) setPlus(false); } });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#ctxMenu')) hideCtx(); });
+    document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list,.sheet-body,.input-box,.viewer,#edCv')) e.preventDefault(); }, { passive: false });
 
-    /* ---------- 消息渲染 ---------- */
+    const openViewer = (it) => { curView = it; $('viewerImg').src = it.url + '?inline=1'; $('viewer').classList.add('open'); };
+    const delItem = async (id) => { await fetch('/api/delete', { method: 'POST', body: JSON.stringify({ id }) }); syncQueue(); };
+    async function savePhoto(it) {
+      if (navigator.canShare && window.isSecureContext) { try { const b = await (await fetch(it.url)).blob(), f = new File([b], it.name || 'image.png', { type: b.type || 'image/png' }); if (navigator.canShare({ files: [f] })) return await navigator.share({ files: [f] }); } catch (e) { if (e && e.name === 'AbortError') return; } }
+      if (isIOS) { openViewer(it); return showToast('请长按图片选「存储到“照片”」'); }
+      const a = el('a'); a.href = it.url; a.download = it.name || 'image.png'; document.body.appendChild(a); a.click(); a.remove(); showToast('已保存');
+    }
+    function popCtx(target, it) {
+      const box = $('ctxBtns'); box.innerHTML = ''; lpFired = true;
+      const add = (lbl, fn) => { const b = el('button', '', lbl); b.type = 'button'; b.onclick = (e) => { e.stopPropagation(); hideCtx(); fn(); }; box.appendChild(b); };
+      if (it.kind === 'text') { add('复制', () => copyText(it.text || it.name)); add('编辑', () => { textInput.value = it.text || it.name || ''; autoGrow(); openKb(); }); }
+      else if (it.ratio) { add('保存到相册', () => savePhoto(it)); add('编辑', () => openEditor(it.url + '?inline=1', { name: it.name })); }
+      else add('下载', () => { const a = el('a'); a.href = it.url; a.download = it.name; document.body.appendChild(a); a.click(); a.remove(); });
+      add('删除', () => delItem(it.id));
+      const m = $('ctxMenu'), r = target.getBoundingClientRect(); m.classList.add('open');
+      const mw = m.offsetWidth, mh = m.offsetHeight, below = r.top < mh + 54, left = Math.max(10, Math.min(window.innerWidth - mw - 10, r.left + r.width / 2 - mw / 2));
+      m.classList.toggle('below', below); m.style.left = left + 'px'; m.style.top = (below ? r.bottom + 8 : r.top - mh - 8) + 'px'; $('ctxArr').style.left = Math.max(12, Math.min(mw - 22, r.left + r.width / 2 - left - 5)) + 'px';
+    }
+    function bindMsg(node, it, onTap) {
+      node.addEventListener('touchstart', () => { lpFired = false; clearTimeout(lpTimer); lpTimer = setTimeout(() => popCtx(node, it), 400); }, { passive: true });
+      node.addEventListener('touchend', () => clearTimeout(lpTimer)); node.addEventListener('touchcancel', () => clearTimeout(lpTimer));
+      node.addEventListener('contextmenu', (e) => { e.preventDefault(); popCtx(node, it); });
+      node.onclick = (e) => { if (lpFired) { e.preventDefault(); lpFired = false; return; } hideCtx(); if (onTap) onTap(e); };
+    }
     function renderItem(it) {
-      if (rendered.has(it.id)) return updateItem(it);
+      itemsMap.set(it.id, it); if (rendered.has(it.id)) return updateItem(it);
       if (it.ts && (lastTs === null || it.ts - lastTs > 300)) list.appendChild(el('div', 'chip', chipText(it.ts)));
       if (it.ts) lastTs = it.ts;
       const isMine = it.sender === 'phone', row = el('div', 'row ' + (isMine ? 'mine' : 'theirs'));
-      if (it.kind === 'text') {
-        const b = el('div', 'bubble', it.text || it.name);
-        b.onclick = () => copyText(it.text || it.name);
-        row.appendChild(b);
-        if (!isMine) { const m = el('div', 'meta', '轻点复制'); m.onclick = b.onclick; row.appendChild(m); }
-      } else if (it.ratio) {
-        const w = Math.min(200, 240 / it.ratio), img = el('img', 'pic');
-        img.style.width = w + 'px'; img.style.height = Math.round(w * it.ratio) + 'px';
-        img.decoding = 'async'; img.src = '/thumb/' + it.id; img.alt = it.name;
-        img.onclick = () => { $('viewerImg').src = it.url; $('viewer').classList.add('open'); };
-        row.appendChild(img);
+      if (it.kind === 'text') { const b = el('div', 'bubble', it.text || it.name); bindMsg(b, it, () => copyText(it.text || it.name)); row.appendChild(b); }
+      else if (it.ratio) {
+        const w = Math.max(56, Math.min(152, 198 / it.ratio)), img = el('img', 'pic'); img.style.width = Math.round(w) + 'px'; img.style.height = Math.max(48, Math.min(200, Math.round(w * it.ratio))) + 'px';
+        img.src = (it.size || 0) <= 2097152 ? (it.url + '?inline=1') : ('/thumb/' + it.id); img.alt = it.name; bindMsg(img, it, () => openViewer(it)); row.appendChild(img);
       } else {
         const a = el('a', 'file'); a.href = it.url; a.download = it.name;
-        const info = el('div', 'file-info'), sub = el('div', 'file-sub');
-        info.append(el('div', 'file-name', it.name), sub);
-        const ext = ((it.name || '').split('.').pop() || 'FILE').slice(0, 4).toUpperCase();
-        const bar = el('div', 'bar'); bar.style.width = '0';
-        a.append(info, el('div', 'badge' + (VIDEO_RE.test(it.name) ? ' video' : ''), ext), bar);
-        row.appendChild(a); row._sub = sub; row._bar = bar;
+        const info = el('div', 'file-info'), sub = el('div', 'file-sub'), ext = ((it.name || '').split('.').pop() || 'FILE').slice(0, 4).toUpperCase(), bar = el('div', 'bar');
+        bar.style.width = '0'; info.append(el('div', 'file-name', it.name), sub); a.append(info, el('div', 'badge' + (VIDEO_RE.test(it.name) ? ' video' : ''), ext), bar); bindMsg(a, it); row.appendChild(a); row._sub = sub; row._bar = bar;
       }
-      list.appendChild(row); rendered.set(it.id, row); updateItem(it);
-      return true;
+      list.appendChild(row); rendered.set(it.id, row); updateItem(it); return true;
     }
     function updateItem(it) {
       const row = rendered.get(it.id); if (!row || !row._sub) return false;
-      row._sub.textContent = fileSub(it, it.sender === 'phone');
-      const pct = (it.status || '').includes('传输') ? (it.progress || 0) : 0;
-      row._bar.style.width = pct ? `calc((100% - 28px) * ${pct / 100})` : '0';
-      return false;
+      row._sub.textContent = fileSub(it, it.sender === 'phone'); const pct = (it.status || '').includes('传输') ? (it.progress || 0) : 0;
+      row._bar.style.width = pct ? `calc((100% - 28px) * ${pct / 100})` : '0'; return false;
     }
     async function syncQueue() {
       try {
         const data = await (await fetch('/api/files', { cache: 'no-store' })).json();
-        if (pageVer && data.page_ver !== pageVer && !textInput.value && !busy && !$('sheet').classList.contains('open')) return location.replace('/?v=' + data.page_ver);
-        pageVer = data.page_ver;
-        const ids = new Set(data.files.map((f) => f.id));
+        if (pageVer && data.page_ver !== pageVer && !textInput.value && !busy && !$('sheet').classList.contains('open') && !$('editor').classList.contains('open')) return location.replace('/?v=' + data.page_ver);
+        pageVer = data.page_ver; const ids = new Set(data.files.map((f) => f.id));
         if ([...rendered.keys()].some((id) => !ids.has(id))) { rendered.clear(); lastTs = null; list.innerHTML = ''; }
-        const added = data.files.map(renderItem).some(Boolean);
-        if (added && stick) toBottom();
+        if (data.files.map(renderItem).some(Boolean) && stick) toBottom();
       } catch (_) {}
     }
 
-    /* ---------- 发送文字 ---------- */
-    function autoGrow() {
-      textInput.style.height = '38px'; textInput.style.height = Math.min(110, textInput.scrollHeight) + 'px';
-      composer.classList.toggle('typing', textInput.value.trim().length > 0);
-    }
-    async function sendText() {
-      const val = textInput.value.trim(); if (!val) return;
-      textInput.value = ''; autoGrow(); stick = true;
-      await fetch('/api/text', { method: 'POST', body: JSON.stringify({ text: val, sender: 'phone' }) });
-      syncQueue();
-    }
-    textInput.addEventListener('input', autoGrow);
-    textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendText(); } });
+    const autoGrow = () => { textInput.style.height = '38px'; textInput.style.height = Math.min(110, textInput.scrollHeight) + 'px'; composer.classList.toggle('typing', textInput.value.trim().length > 0); };
+    const sendText = async () => { const v = textInput.value.trim(); if (!v) return; textInput.value = ''; autoGrow(); stick = true; await fetch('/api/text', { method: 'POST', body: JSON.stringify({ text: v, sender: 'phone' }) }); syncQueue(); };
+    textInput.addEventListener('input', autoGrow); textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendText(); } });
     $('btnSend').addEventListener('mousedown', (e) => e.preventDefault()); $('btnSend').onclick = sendText;
 
-    /* ---------- 发送图片/文件：全屏预览后确认 ---------- */
-    $('btnPlus').onclick = () => { textInput.blur(); fileInput.click(); };
-    fileInput.onchange = () => {
-      if (!fileInput.files.length) return;
-      pendingFiles = Array.from(fileInput.files); fileInput.value = '';
-      const body = $('sheetBody'); body.innerHTML = '';
-      const thumbOf = (f) => { if (!/^image\//i.test(f.type)) return el('div', '', f.name); const i = el('img'); i.src = URL.createObjectURL(f); return i; };
-      if (pendingFiles.length === 1) {
-        body.appendChild(/^image\//i.test(pendingFiles[0].type) ? thumbOf(pendingFiles[0]) : el('div', 'sheet-file', pendingFiles[0].name));
+    const uploadOne = (f, i, n) => new Promise((res) => { const x = new XMLHttpRequest(); x.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name, mime: f.type || 'application/octet-stream', sender: 'phone' })); x.upload.onprogress = (e) => { if (e.lengthComputable) showToast((n > 1 ? `发送中 ${i + 1}/${n} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); }; x.onloadend = () => res(x.status === 200); x.send(f); });
+    const CHK_SVG = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8.4l3.1 3.1 6.5-6.8"/></svg>';
+    const makeChk = (it) => { const h = el('div', 'chk-hit'), c = el('div', 'chk' + (it.sel ? ' on' : '')); if (it.sel) c.innerHTML = CHK_SVG; h.appendChild(c); h.onclick = (e) => { e.stopPropagation(); it.sel = !it.sel; renderSheet(); }; return h; };
+    function addFiles(fl) { if (!fl || !fl.length) return; setPlus(false); for (const f of fl) pending.push({ file: f, isImg: /^image\//i.test(f.type), url: /^image\//i.test(f.type) ? URL.createObjectURL(f) : '', sel: true }); sheetIdx = -1; $('sheet').classList.add('open'); renderSheet(); }
+    ['inPhoto', 'inCam', 'inFile'].forEach((id) => { $(id).onchange = (e) => { addFiles(e.target.files); e.target.value = ''; }; });
+    function renderSheet() {
+      const body = $('sheetBody'), acts = $('sheetActs'), topR = $('sheetTopR'), selN = pending.filter((p) => p.sel).length;
+      body.innerHTML = ''; acts.innerHTML = ''; topR.innerHTML = ''; $('btnConfirmSend').disabled = selN === 0; $('btnConfirmSend').textContent = selN ? `发送(${selN})` : '发送';
+      if (sheetIdx >= 0 && pending[sheetIdx]) {
+        const it = pending[sheetIdx]; body.className = 'sheet-body single'; $('btnSheetLeft').textContent = '‹'; $('sheetTitle').textContent = `${sheetIdx + 1} / ${pending.length}`;
+        const c = el('div', 'chk' + (it.sel ? ' on' : '')); if (it.sel) c.innerHTML = CHK_SVG; c.onclick = () => { it.sel = !it.sel; renderSheet(); }; topR.appendChild(c);
+        body.appendChild(it.isImg ? Object.assign(el('img'), { src: it.url }) : el('div', 'tile-f', it.file.name));
+        const bk = el('button', '', '返回网格'); bk.onclick = () => { sheetIdx = -1; renderSheet(); }; acts.appendChild(bk);
+        if (it.isImg) { const ed = el('button', '', '编辑'); ed.onclick = () => openEditor(it.url, { sheetIdx }); acts.appendChild(ed); }
       } else {
-        const grid = el('div', 'grid'); pendingFiles.forEach((f) => grid.appendChild(thumbOf(f))); body.appendChild(grid);
+        body.className = 'sheet-body'; $('btnSheetLeft').textContent = '×'; $('sheetTitle').textContent = '已选项目'; const g = el('div', 'grid');
+        pending.forEach((it, idx) => { const t = el('div', 'tile' + (it.sel ? ' sel' : '')); t.append(it.isImg ? Object.assign(el('img'), { src: it.url }) : el('div', 'tile-f', it.file.name), makeChk(it)); t.onclick = () => { sheetIdx = idx; renderSheet(); }; g.appendChild(t); });
+        const add = el('label', 'tile tile-add', '+'), inp = el('input'); inp.type = 'file'; inp.multiple = true; inp.accept = 'image/*,video/*,*/*'; inp.onchange = (e) => { addFiles(e.target.files); e.target.value = ''; }; add.appendChild(inp); g.appendChild(add); body.appendChild(g);
+        const pv = el('button', '', selN ? `预览(${selN})` : '预览'); pv.disabled = !selN; pv.onclick = () => { sheetIdx = pending.findIndex((p) => p.sel); renderSheet(); }; acts.appendChild(pv);
       }
-      $('sheetTitle').textContent = pendingFiles.length > 1 ? `发送 ${pendingFiles.length} 项给电脑` : '发送给电脑';
-      $('sheetInfo').textContent = `共 ${fmtSize(pendingFiles.reduce((s, f) => s + f.size, 0))}`;
-      $('sheet').classList.add('open');
-    };
-    const closeSheet = () => { $('sheet').classList.remove('open'); $('sheetBody').innerHTML = ''; };
-    $('btnCancelSend').onclick = () => { pendingFiles = []; closeSheet(); };
-    const uploadOne = (f, idx, count) => new Promise((resolve) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name, mime: f.type || 'application/octet-stream', sender: 'phone' }));
-      xhr.upload.onprogress = (e) => { if (e.lengthComputable) showToast((count > 1 ? `发送中 ${idx + 1}/${count} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); };
-      xhr.onloadend = () => resolve(xhr.status === 200);
-      xhr.send(f);
-    });
-    $('btnConfirmSend').onclick = async () => {
-      const files = pendingFiles.slice(); pendingFiles = []; closeSheet(); busy = true; stick = true;
-      let ok = 0;
-      for (let i = 0; i < files.length; i++) { if (await uploadOne(files[i], i, files.length)) ok++; syncQueue(); }
-      busy = false; showToast(ok === files.length ? '已发送' : `有 ${files.length - ok} 个发送失败`);
-    };
-    $('viewer').onclick = () => $('viewer').classList.remove('open');
-    $('btnClear').onclick = async () => { await fetch('/api/clear', { method: 'POST' }); syncQueue(); showToast('已清空'); };
+    }
+    const closeSheet = () => { pending.forEach((p) => p.url && URL.revokeObjectURL(p.url)); pending = []; sheetIdx = -1; $('sheet').classList.remove('open'); };
+    $('btnSheetLeft').onclick = () => { if (sheetIdx >= 0) { sheetIdx = -1; renderSheet(); } else closeSheet(); };
+    $('btnConfirmSend').onclick = async () => { const files = pending.filter((p) => p.sel).map((p) => p.file); if (!files.length) return; closeSheet(); busy = true; stick = true; let ok = 0; for (let i = 0; i < files.length; i++) { if (await uploadOne(files[i], i, files.length)) ok++; syncQueue(); } busy = false; showToast(ok === files.length ? '已发送' : `有 ${files.length - ok} 个失败`); };
 
+    const cv = $('edCv'), ctx = cv.getContext('2d');
+    let edTool = 'pen', edHist = [], edTarget = null, edPts = [], edCrop = null, edCropSnap = null, edDrag = false, edSnap = null;
+    function openEditor(src, target) {
+      edTarget = target; edHist = []; edCrop = edCropSnap = null; $('viewer').classList.remove('open');
+      const img = new Image(); img.onload = () => { const sc = Math.min(1, 2048 / Math.max(1, img.naturalWidth, img.naturalHeight)); cv.width = Math.max(1, Math.round(img.naturalWidth * sc)); cv.height = Math.max(1, Math.round(img.naturalHeight * sc)); ctx.drawImage(img, 0, 0, cv.width, cv.height); $('editor').classList.add('open'); }; img.src = src;
+    }
+    const cvPt = (e) => { const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [Math.max(0, Math.min(cv.width, (t.clientX - r.left) / r.width * cv.width)), Math.max(0, Math.min(cv.height, (t.clientY - r.top) / r.height * cv.height))]; };
+    function drawEd(pts, tool) {
+      const sw = Math.max(4, Math.round(Math.max(cv.width, cv.height) / 220)); ctx.strokeStyle = '#FA5151'; ctx.lineWidth = sw; ctx.lineCap = ctx.lineJoin = 'round';
+      if (tool === 'rect') { const [a, b] = [pts[0], pts[pts.length - 1]]; ctx.strokeRect(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])); }
+      else if (tool === 'pen' && pts.length > 1) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); pts.forEach((p) => ctx.lineTo(p[0], p[1])); ctx.stroke(); }
+      else if (tool === 'mosaic') { const b = Math.max(12, Math.round(Math.max(cv.width, cv.height) / 55)), p = pts[pts.length - 1], x0 = Math.max(0, Math.floor((p[0] - b) / b) * b), y0 = Math.max(0, Math.floor((p[1] - b) / b) * b); for (let x = x0; x < Math.min(cv.width, p[0] + b); x += b) for (let y = y0; y < Math.min(cv.height, p[1] + b); y += b) { const d = ctx.getImageData(x, y, 1, 1).data; ctx.fillStyle = `rgb(${d[0]},${d[1]},${d[2]})`; ctx.fillRect(x, y, b, b); } }
+      else if (tool === 'crop') { const [a, b] = [pts[0], pts[pts.length - 1]]; edCrop = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])]; ctx.strokeStyle = '#07C160'; ctx.lineWidth = sw; ctx.strokeRect(...edCrop); }
+    }
+    const clearCrop = () => { if (edCropSnap) { ctx.putImageData(edCropSnap, 0, 0); edCropSnap = null; } edCrop = null; }, pushEd = () => { edHist.push(ctx.getImageData(0, 0, cv.width, cv.height)); if (edHist.length > 12) edHist.shift(); };
+    const onEdStart = (e) => { e.preventDefault(); if (edCropSnap) clearCrop(); edDrag = true; edPts = [cvPt(e)]; if (edTool !== 'mosaic') edSnap = ctx.getImageData(0, 0, cv.width, cv.height); else pushEd(); };
+    const onEdMove = (e) => { if (!edDrag) return; e.preventDefault(); edPts.push(cvPt(e)); if (edTool !== 'mosaic' && edSnap) ctx.putImageData(edSnap, 0, 0); drawEd(edPts, edTool); };
+    const onEdEnd = () => { if (!edDrag) return; edDrag = false; if (edTool === 'crop') edCropSnap = edSnap; else if (edTool !== 'mosaic' && edPts.length > 1 && edSnap) { edHist.push(edSnap); if (edHist.length > 12) edHist.shift(); } edSnap = null; };
+    cv.addEventListener('touchstart', onEdStart, { passive: false }); cv.addEventListener('touchmove', onEdMove, { passive: false }); cv.addEventListener('touchend', onEdEnd);
+    cv.addEventListener('mousedown', onEdStart); window.addEventListener('mousemove', onEdMove); window.addEventListener('mouseup', onEdEnd);
+    $('edTools').onclick = (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; clearCrop(); edTool = b.dataset.t; [...$('edTools').querySelectorAll('button[data-t]')].forEach((x) => x.classList.toggle('on', x === b)); };
+    $('edRot').onclick = () => { clearCrop(); pushEd(); const t = el('canvas'); t.width = cv.height; t.height = cv.width; const tc = t.getContext('2d'); tc.translate(t.width, 0); tc.rotate(Math.PI / 2); tc.drawImage(cv, 0, 0); cv.width = t.width; cv.height = t.height; ctx.drawImage(t, 0, 0); };
+    $('edUndo').onclick = () => { if (edCropSnap) return clearCrop(); const s = edHist.pop(); if (s) { cv.width = s.width; cv.height = s.height; ctx.putImageData(s, 0, 0); } };
+    $('edCancel').onclick = () => { clearCrop(); $('editor').classList.remove('open'); };
+    $('edDone').onclick = () => {
+      if (edCrop && edCrop[2] > 20 && edCrop[3] > 20) { const [x, y, w, h] = edCrop.map(Math.round); clearCrop(); const d = ctx.getImageData(x, y, w, h); cv.width = w; cv.height = h; ctx.putImageData(d, 0, 0); }
+      cv.toBlob(async (b) => { if (!b) return; const f = new File([b], (edTarget && edTarget.name) || '编辑图片.png', { type: 'image/png' }); $('editor').classList.remove('open'); if (edTarget && edTarget.sheetIdx != null && pending[edTarget.sheetIdx]) { const it = pending[edTarget.sheetIdx]; URL.revokeObjectURL(it.url); it.file = f; it.url = URL.createObjectURL(f); renderSheet(); } else { busy = true; await uploadOne(f, 0, 1); busy = false; syncQueue(); showToast('已发送编辑图'); } }, 'image/png');
+    };
+    let vTs = 0; $('viewer').addEventListener('touchstart', () => { vTs = Date.now(); }, { passive: true });
+    $('viewer').onclick = (e) => { if (!e.target.closest('.viewer-acts') && (!vTs || Date.now() - vTs < 350)) $('viewer').classList.remove('open'); vTs = 0; };
+    $('viewerEdit').onclick = () => curView && openEditor(curView.url + '?inline=1', { name: curView.name });
+    $('viewerSave').onclick = () => curView && savePhoto(curView); $('viewerClose').onclick = () => $('viewer').classList.remove('open');
+    $('btnClear').onclick = async () => { await fetch('/api/clear', { method: 'POST' }); syncQueue(); showToast('已清空'); };
     fit(); syncQueue(); setInterval(syncQueue, 1500);
   </script>
 </body>

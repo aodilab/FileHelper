@@ -1,8 +1,8 @@
-import os, io, html, json, time, socket, zipfile, mimetypes, threading, subprocess, urllib.parse
+import os, io, json, time, socket, mimetypes, threading, subprocess, urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
-from config.settings import APPLE_TOUCH_ICON_PATH, DEFAULT_PORT, ICON_ICO_PATH, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
+from config.settings import APPLE_TOUCH_ICON_PATH, DEFAULT_PORT, ICON_ICO_PATH, MIME_OVERRIDES, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
 from src.core.queue_manager import get_local_ip, format_size
 
 
@@ -17,15 +17,15 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 def make_handler(file_queue, host_ip, port):
-    class AppleDropHandler(BaseHTTPRequestHandler):
+    class FileHelperHandler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
             pass
 
-        def send_cors_headers(self):
+        def send_cors_headers(self, cache=False):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Range")
-            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Cache-Control", "private, max-age=3600" if cache else "no-store, no-cache, must-revalidate")
 
         def do_OPTIONS(self):
             self.send_response(200); self.send_cors_headers(); self.end_headers()
@@ -55,13 +55,17 @@ def make_handler(file_queue, host_ip, port):
                 name, mime = qs.get("name", ["手机图片.png"])[0], qs.get("mime", ["image/png"])[0]
                 item = file_queue.add_memory_item(name, body, mime=mime, sender=qs.get("sender", ["phone"])[0])
                 self._send_json({"success": bool(item), "item": item})
+            elif path == "/api/delete":
+                try: file_queue.remove(json.loads(body.decode("utf-8")).get("id", "")); self._send_json({"success": True})
+                except Exception as e: self._send_text(str(e), status=400)
             elif path == "/api/clear":
                 file_queue.clear_all(); self._send_json({"success": True})
             else:
                 self._send_text("Not Found", status=404)
 
         def do_GET(self):
-            path = urllib.parse.urlparse(self.path).path
+            parsed = urllib.parse.urlparse(self.path)
+            path, inline = parsed.path, "inline=1" in (parsed.query or "")
             if path == "/api/ping":
                 file_queue.request_wakeup()
                 return self._send_json({"status": "ok", "app": "FileHelper"})
@@ -86,54 +90,45 @@ def make_handler(file_queue, host_ip, port):
                 item = file_queue.get_by_id(path.split("/thumb/")[1])
                 if not item or item.get("thumb") is None: return self._send_text("Not Found", status=404)
                 buf = io.BytesIO(); item["thumb"].convert("RGB").save(buf, "JPEG", quality=85)
-                return self._send_text(buf.getvalue(), content_type="image/jpeg")
+                return self._send_text(buf.getvalue(), content_type="image/jpeg", cache=True)
             if path.startswith("/api/latest") or path.startswith("/api/next"):
                 item = file_queue.get_next_pending()
                 return self._stream_item(item) if item else self._send_text("暂无待发送文件", status=404)
             if path.startswith("/download/"):
                 item = file_queue.get_by_id(path.split("/download/")[1])
-                return self._stream_item(item) if item else self._send_text("Not Found", status=404)
-            if path == "/download_zip":
-                return self._send_zip_archive()
-            if path in ("/", "/index.html"):
-                return self._render_mobile_portal()
+                return self._stream_item(item, inline=inline) if item else self._send_text("Not Found", status=404)
+            if path in ("/", "/index.html"): return self._render_mobile_portal()
             self._send_text("Not Found", status=404)
 
-        def _send_text(self, text, status=200, content_type="text/plain; charset=utf-8"):
+        def _send_text(self, text, status=200, content_type="text/plain; charset=utf-8", cache=False):
             payload = text.encode("utf-8") if isinstance(text, str) else text
-            self.send_response(status)
-            self.send_cors_headers()
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(payload)))
-            self.end_headers()
-            self.wfile.write(payload)
+            self.send_response(status); self.send_cors_headers(cache=cache)
+            self.send_header("Content-Type", content_type); self.send_header("Content-Length", str(len(payload)))
+            self.end_headers(); self.wfile.write(payload)
 
         def _send_json(self, obj):
             self._send_text(json.dumps(obj, ensure_ascii=False), content_type="application/json; charset=utf-8")
 
-        def _stream_item(self, item):
+        def _stream_item(self, item, inline=False):
+            disp = "inline" if inline else "attachment"
             if item.get("kind") == "memory":
                 raw = item.get("bytes") or b""
-                self.send_response(200)
-                self.send_cors_headers()
+                self.send_response(200); self.send_cors_headers()
                 self.send_header("Content-Type", item.get("mime") or "application/octet-stream")
                 self.send_header("Content-Length", str(len(raw)))
-                safe_utf8 = urllib.parse.quote(item["name"])
-                self.send_header("Content-Disposition", f"attachment; filename*=UTF-8''{safe_utf8}")
-                self.end_headers()
-                self.wfile.write(raw)
-                if item.get("sender") != "phone":
-                    file_queue.update_status(item["id"], status="已完成", progress=100)
+                self.send_header("Content-Disposition", f"{disp}; filename*=UTF-8''{urllib.parse.quote(item['name'])}")
+                self.end_headers(); self.wfile.write(raw)
+                if item.get("sender") != "phone": file_queue.update_status(item["id"], status="已完成", progress=100)
                 return
-            self._stream_disk_file(item)
+            self._stream_disk_file(item, disp=disp)
 
-        def _stream_disk_file(self, item):
+        def _stream_disk_file(self, item, disp="attachment"):
             file_path = item.get("path", "")
             if not os.path.exists(file_path):
                 return self._send_text("File Missing", status=404)
             file_size = os.path.getsize(file_path)
             ext = os.path.splitext(item["name"])[1].lower() or ".bin"
-            content_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
+            content_type = MIME_OVERRIDES.get(ext) or mimetypes.guess_type(file_path)[0] or "application/octet-stream"
             range_header = self.headers.get("Range")
             start, end = 0, file_size - 1
             if range_header and range_header.startswith("bytes="):
@@ -150,11 +145,11 @@ def make_handler(file_queue, host_ip, port):
             self.send_header("Content-Length", str(content_length))
             self.send_header("Accept-Ranges", "bytes")
             safe_utf8 = urllib.parse.quote(item["name"])
-            self.send_header("Content-Disposition", f'attachment; filename="Media{ext}"; filename*=UTF-8\'\'{safe_utf8}')
+            self.send_header("Content-Disposition", f'{disp}; filename="Media{ext}"; filename*=UTF-8\'\'{safe_utf8}')
             self.end_headers()
 
-            bytes_sent, start_ts, last_notify = 0, time.time(), 0.0
-            file_queue.update_status(item["id"], status="正在传输", progress=0)
+            bytes_sent, start_ts, last_notify, track = 0, time.time(), 0.0, (disp != "inline")
+            if track: file_queue.update_status(item["id"], status="正在传输", progress=0)
             try:
                 with open(file_path, "rb") as f:
                     f.seek(start)
@@ -167,32 +162,14 @@ def make_handler(file_queue, host_ip, port):
                         remaining -= len(chunk)
                         bytes_sent += len(chunk)
                         now = time.time()
-                        if now - last_notify > 0.25:
+                        if track and now - last_notify > 0.25:
                             speed_str = f"{format_size(bytes_sent / max(now - start_ts, 0.001))}/s"
                             pct = int(((start + bytes_sent) / file_size) * 100)
                             file_queue.update_status(item["id"], status=f"传输中 {pct}%", progress=pct, speed=speed_str)
                             last_notify = now
-                file_queue.update_status(item["id"], status="已完成", progress=100, speed="")
+                if track: file_queue.update_status(item["id"], status="已完成", progress=100, speed="")
             except Exception:
                 pass
-
-        def _send_zip_archive(self):
-            items = [it for it in file_queue.get_all() if it.get("kind") == "file"]
-            if not items:
-                return self._send_text("Empty Queue", status=404)
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
-                for it in items:
-                    if os.path.exists(it["path"]):
-                        zf.write(it["path"], arcname=it["name"])
-            payload = buf.getvalue()
-            self.send_response(200)
-            self.send_cors_headers()
-            self.send_header("Content-Type", "application/zip")
-            self.send_header("Content-Length", str(len(payload)))
-            self.send_header("Content-Disposition", "attachment; filename=FileHelper_Bundle.zip")
-            self.end_headers()
-            self.wfile.write(payload)
 
         def _render_mobile_portal(self):
             with open(MOBILE_HTML_PATH, "r", encoding="utf-8") as f:
@@ -200,7 +177,7 @@ def make_handler(file_queue, host_ip, port):
             page = tpl.replace("{{HOST_IP}}", host_ip).replace("{{PORT}}", str(port))
             self._send_text(page, content_type="text/html; charset=utf-8")
 
-    return AppleDropHandler
+    return FileHelperHandler
 
 
 class ServerThread:

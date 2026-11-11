@@ -9,6 +9,7 @@ class DrawPrimitives:
 
     def __init__(self):
         self._fonts = {}
+        self._img_cache = {}
         self.scale = float(S)
 
     def set_scale(self, scale):
@@ -127,11 +128,16 @@ class DrawPrimitives:
         sc = self.scale
         X, Y, W, H = int(round(x * sc)), int(round(y * sc)), max(1, int(round(w * sc))), max(1, int(round(h * sc)))
         R = int(round(radius * sc))
-        resized = pil_img.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA")
-        mask = Image.new("L", (W, H), 0)
-        ImageDraw.Draw(mask).rounded_rectangle([0, 0, W - 1, H - 1], radius=R, fill=255)
-        patch = Image.new("RGBA", (W, H), (255, 255, 255, 0))
-        ImageDraw.Draw(patch).rounded_rectangle([0, 0, W - 1, H - 1], radius=R, fill=(255, 255, 255, 255))
-        patch.paste(resized, (0, 0), mask)
-        ImageDraw.Draw(patch).rounded_rectangle([0, 0, W - 1, H - 1], radius=R, outline=TOKENS["card_border"], width=max(1, int(sc / 2)))
-        canvas.alpha_composite(patch, (X, Y))
+        key = (id(pil_img), W, H, R)
+        patch = self._img_cache.get(key)
+        if patch is None:
+            fg = Image.new("RGBA", (W, H), (255, 255, 255, 255))
+            fg.alpha_composite(pil_img.resize((W, H), Image.Resampling.LANCZOS).convert("RGBA"))
+            mask = Image.new("L", (W, H), 0)
+            ImageDraw.Draw(mask).rounded_rectangle([0, 0, W - 1, H - 1], radius=R, fill=255)
+            patch = Image.new("RGBA", (W, H), TOKENS["canvas_bg"])
+            patch.paste(fg, (0, 0), mask)
+            ImageDraw.Draw(patch).rounded_rectangle([0, 0, W - 1, H - 1], radius=R, outline=TOKENS["card_border"], width=max(1, int(sc / 2)))
+            if len(self._img_cache) > 64: self._img_cache.clear()
+            self._img_cache[key] = patch
+        canvas.paste(patch, (X, Y))
