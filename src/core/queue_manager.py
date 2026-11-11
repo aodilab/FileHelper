@@ -82,7 +82,7 @@ def check_existing_instance_and_send(files, port=DEFAULT_PORT):
                 if info.get("boot_ts", 0) < _latest_code_mtime() or info.get("desktop", "") != _desktop_name():
                     try: _DIRECT_OPENER.open(f"http://127.0.0.1:{port}/api/ping?quit=1", timeout=0.2).close()
                     except Exception: pass
-                    time.sleep(0.12)
+                    time.sleep(0.16)
                     return False
                 if files:
                     payload = json.dumps({"paths": [os.path.abspath(f) for f in files]}).encode("utf-8")
@@ -98,7 +98,7 @@ class FileQueue:
 
     def __init__(self, persist=True):
         self.lock, self.persist, self.boot_ts, self.desktop_name = threading.Lock(), persist, time.time(), _desktop_name()
-        self.files, self.next_id, self.version = [], 1, 0
+        self.files, self.next_id, self.version = [], int(time.time() * 1000), 0
         self.wakeup_requested, self.quit_requested, self.phone_connected = False, False, False
         if self.persist: self._load_history()
 
@@ -124,7 +124,7 @@ class FileQueue:
                     rec.update({"bytes": raw_b, "thumb": None, "progress": 0, "speed": ""})
                     self.files.append(rec)
                     if is_img: deferred.append((rec, raw_b))
-        self.next_id = max((int(f["id"]) for f in self.files if str(f.get("id", "")).isdigit()), default=0) + 1
+        self.next_id = max([int(f["id"]) for f in self.files if str(f.get("id", "")).isdigit()] + [int(time.time() * 1000)]) + 1
         if deferred:
             def _hydrate():
                 for item, src in deferred:

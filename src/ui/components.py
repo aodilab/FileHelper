@@ -1,7 +1,10 @@
+import itertools
 import os
 import qrcode
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from config.settings import SUPERSAMPLE_SCALE as S, TOKENS
+
+_IMG_SEQ = itertools.count(1)
 
 
 class DrawPrimitives:
@@ -128,7 +131,10 @@ class DrawPrimitives:
         sc = self.scale
         X, Y, W, H = int(round(x * sc)), int(round(y * sc)), max(1, int(round(w * sc))), max(1, int(round(h * sc)))
         R = int(round(radius * sc))
-        key = (id(pil_img), W, H, R)
+        uid = getattr(pil_img, "_cache_uid", 0)
+        if not uid:
+            uid = next(_IMG_SEQ); pil_img._cache_uid = uid
+        key = (uid, W, H, R)
         patch = self._img_cache.get(key)
         if patch is None:
             fg = Image.new("RGBA", (W, H), (255, 255, 255, 255))

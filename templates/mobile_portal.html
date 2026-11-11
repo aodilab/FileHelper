@@ -100,7 +100,7 @@
     document.addEventListener('click', (e) => { if (!e.target.closest('#ctxMenu')) hideCtx(); });
     document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list,.input-box,.viewer,#edCv')) e.preventDefault(); }, { passive: false });
 
-    const openViewer = (it) => { curView = it; $('viewerImg').src = it.url + '?inline=1'; $('viewer').classList.add('open'); };
+    const openViewer = (it) => { curView = it; $('viewerImg').src = `${it.url}?inline=1&t=${it.ts || 0}`; $('viewer').classList.add('open'); };
     const delItem = async (id) => { await fetch('/api/delete', { method: 'POST', body: JSON.stringify({ id }) }); syncQueue(); };
     async function savePhoto(it) {
       if (navigator.canShare && window.isSecureContext) { try { const b = await (await fetch(it.url)).blob(), f = new File([b], it.name || 'image.png', { type: b.type || 'image/png' }); if (navigator.canShare({ files: [f] })) return await navigator.share({ files: [f] }); } catch (e) { if (e && e.name === 'AbortError') return; } }
@@ -132,7 +132,7 @@
       if (it.kind === 'text') { const b = el('div', 'bubble', it.text || it.name); bindMsg(b, it, () => copyText(it.text || it.name)); row.appendChild(b); }
       else if (it.ratio) {
         const w = Math.max(56, Math.min(152, 198 / it.ratio)), img = el('img', 'pic'); img.style.width = Math.round(w) + 'px'; img.style.height = Math.max(48, Math.min(200, Math.round(w * it.ratio))) + 'px';
-        img.src = (it.size || 0) <= 2097152 ? (it.url + '?inline=1') : ('/thumb/' + it.id); img.alt = it.name; bindMsg(img, it, () => openViewer(it)); row.appendChild(img);
+        img.src = (it.size || 0) <= 2097152 ? `${it.url}?inline=1&t=${it.ts || 0}` : `/thumb/${it.id}?t=${it.ts || 0}`; img.alt = it.name; bindMsg(img, it, () => openViewer(it)); row.appendChild(img);
       } else {
         const a = el('a', 'file'); a.href = it.url; a.download = it.name;
         const info = el('div', 'file-info'), sub = el('div', 'file-sub'), ext = ((it.name || '').split('.').pop() || 'FILE').slice(0, 4).toUpperCase(), bar = el('div', 'bar');
