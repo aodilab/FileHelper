@@ -14,7 +14,7 @@
     .app { position: fixed; top: 0; left: 0; right: 0; height: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
     .top-bar { position: relative; z-index: 2; flex: none; height: 46px; background: var(--bar); border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 0 8px; }
     .top-title { grid-column: 2; text-align: center; font-size: 17px; font-weight: 500; } .btn-clear { grid-column: 3; justify-self: end; border: none; background: none; color: var(--link); font-size: 15px; padding: 6px 8px; }
-    .chat-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; padding: 6px 12px 16px; display: flex; flex-direction: column; }
+    .chat-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; padding: 6px 14px 16px; display: flex; flex-direction: column; }
     .chip { align-self: center; margin: 20px 0 2px; font-size: 12px; color: var(--sub); } .chip:first-child { margin-top: 8px; }
     .row { display: flex; flex-direction: column; max-width: 74%; margin-top: 12px; } .row:first-child { margin-top: 6px; }
     .row.mine { align-self: flex-end; align-items: flex-end; } .row.theirs { align-self: flex-start; align-items: flex-start; }
@@ -26,31 +26,21 @@
     .file-name { font-size: 15px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
     .badge { flex: none; width: 36px; height: 42px; border-radius: 5px; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; background: #8E8E93; } .badge.video { background: #5884F5; }
     .bar { position: absolute; left: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--wx); transition: width 0.3s; }
-    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 8px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); } .app.kb .composer, .app.plus .composer { padding: 7px 10px; }
-    .btn-plus { flex: none; width: 34px; height: 34px; margin-bottom: 2px; border-radius: 50%; border: 1.5px solid #2C2C2E; background: none; font-size: 23px; font-weight: 300; line-height: 1; color: #2C2C2E; display: flex; align-items: center; justify-content: center; transition: transform 0.18s; } .app.plus .btn-plus { transform: rotate(45deg); }
-    .input-wrap { position: relative; flex: 1; min-width: 0; min-height: 38px; background: #fff; border-radius: 6px; display: flex; } .kb-shield { position: absolute; inset: 0; z-index: 3; } .app.kb .kb-shield { display: none; }
-    .input-box { width: 100%; height: 38px; max-height: 110px; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; font-size: 16px; font-family: inherit; line-height: 1.38; resize: none; outline: none; overflow-y: auto; }
+    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 10px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px)) 16px; }
+    .app.kb .composer { padding: 7px 14px 7px 16px; }
+    .input-wrap { position: relative; flex: 1; min-width: 0; min-height: 38px; background: #fff; border-radius: 8px; display: flex; }
+    .kb-shield { position: absolute; inset: 0; z-index: 3; } .app.kb .kb-shield { display: none; }
+    .input-box { width: 100%; height: 38px; max-height: 110px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; font-size: 16px; font-family: inherit; line-height: 1.38; resize: none; outline: none; overflow-y: auto; }
     .input-box.focusing { position: fixed; top: 0; left: 0; width: 20px; height: 20px; opacity: 0; pointer-events: none; }
-    .btn-send { flex: none; height: 34px; margin-bottom: 2px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 15px; font-weight: 500; display: none; } .composer.typing .btn-send { display: block; }
-    .plus-panel { flex: none; display: none; grid-template-columns: repeat(4, 1fr); gap: 14px; background: var(--bar); border-top: 0.5px solid var(--line); padding: 20px 22px calc(22px + env(safe-area-inset-bottom, 0px)); } .app.plus .plus-panel { display: grid; }
-    .p-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 12px; color: #666; cursor: pointer; } .p-item input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
-    .p-ico { width: 58px; height: 58px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; color: #2C2C2E; } .p-item:active .p-ico { background: #E5E5EA; }
+    .btn-plus { position: relative; flex: none; width: 34px; height: 34px; margin-bottom: 2px; border-radius: 50%; border: 1.5px solid #2C2C2E; background: none; color: #2C2C2E; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
+    .btn-plus:active { background: rgba(0,0,0,0.06); } .btn-plus input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+    .composer.typing .btn-plus { display: none; }
+    .btn-send { flex: none; height: 34px; margin-bottom: 2px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 15px; font-weight: 500; display: none; }
+    .composer.typing .btn-send { display: block; }
+    .btn-go { height: 34px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 15px; font-weight: 500; }
     .ctx { position: fixed; z-index: 140; background: #38383A; color: #fff; border-radius: 8px; padding: 2px 4px; display: none; align-items: center; box-shadow: 0 6px 20px rgba(0,0,0,0.22); } .ctx.open { display: flex; }
     .ctx button { border: none; background: none; color: #fff; font-size: 13px; padding: 8px 12px; white-space: nowrap; position: relative; } .ctx button + button::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 0.5px; background: rgba(255,255,255,0.18); }
     .ctx-arr { position: absolute; width: 10px; height: 10px; background: #38383A; transform: rotate(45deg); bottom: -4px; } .ctx.below .ctx-arr { bottom: auto; top: -4px; }
-    .sheet { position: fixed; inset: 0; z-index: 150; background: #111; color: #fff; display: none; flex-direction: column; } .sheet.open { display: flex; }
-    .sheet-top { flex: none; height: 52px; background: #191919; display: grid; grid-template-columns: 72px 1fr 72px; align-items: center; padding: 0 8px; }
-    .sheet-close { border: none; background: none; color: #fff; font-size: 24px; line-height: 1; padding: 8px; justify-self: start; } .sheet-pill { justify-self: center; background: #2C2C2E; color: #E5E5EA; font-size: 14px; font-weight: 500; padding: 5px 14px; border-radius: 16px; }
-    .sheet-top-r { justify-self: end; padding-right: 6px; display: flex; align-items: center; }
-    .sheet-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; align-items: flex-start; justify-content: center; } .sheet-body.single { align-items: center; padding: 8px; } .sheet-body.single > img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .grid { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px; } .tile { position: relative; aspect-ratio: 1; background: #242426; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    .tile img { width: 100%; height: 100%; object-fit: cover; display: block; } .tile.sel::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.22); pointer-events: none; }
-    .tile-f { font-size: 11px; color: #ccc; padding: 6px; text-align: center; word-break: break-all; line-height: 1.3; } .tile-add { color: #8E8E93; font-size: 30px; font-weight: 300; } .tile-add input { position: absolute; inset: 0; opacity: 0; }
-    .chk-hit { position: absolute; top: 0; right: 0; width: 38px; height: 38px; z-index: 2; display: flex; align-items: flex-start; justify-content: flex-end; padding: 5px; }
-    .chk { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.88); background: rgba(0,0,0,0.28); color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; } .chk.on { background: var(--wx); border-color: var(--wx); }
-    .sheet-bottom { flex: none; background: #191919; border-top: 0.5px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
-    .sh-acts { display: flex; gap: 18px; } .sh-acts button { border: none; background: none; color: #fff; font-size: 15px; padding: 4px 0; } .sh-acts button:disabled { color: #555; }
-    .btn-go { height: 34px; padding: 0 14px; border-radius: 6px; border: none; background: var(--wx); color: #fff; font-size: 15px; font-weight: 500; } .btn-go:disabled { background: #2C2C2E; color: #666; }
     .viewer, .editor { position: fixed; inset: 0; background: #000; z-index: 160; display: none; flex-direction: column; align-items: center; justify-content: center; } .viewer.open, .editor.open { display: flex; }
     .viewer img { max-width: 96%; max-height: 82%; object-fit: contain; -webkit-touch-callout: default; user-select: auto; } #edCv { max-width: 96%; max-height: 74%; touch-action: none; background: #111; }
     .viewer-bar, .ed-top, .ed-bot { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; color: #fff; font-size: 14px; }
@@ -65,18 +55,12 @@
     <div class="top-bar"><span class="top-title">文件传输助手</span><button class="btn-clear" id="btnClear" type="button">清空</button></div>
     <main class="chat-list" id="chatList"></main>
     <footer class="composer" id="composer">
-      <button class="btn-plus" id="btnPlus" type="button" aria-label="更多">+</button>
       <div class="input-wrap"><div class="kb-shield" id="kbShield"></div><textarea class="input-box" id="textInput" rows="1" enterkeyhint="send"></textarea></div>
+      <label class="btn-plus" id="btnPlus" aria-label="添加"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><input type="file" id="inFile" multiple></label>
       <button class="btn-send" id="btnSend" type="button">发送</button>
     </footer>
-    <section class="plus-panel" id="plusPanel">
-      <label class="p-item"><span class="p-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.8-4.5L7 20"/></svg></span><span>照片</span><input type="file" id="inPhoto" multiple accept="image/*,video/*"></label>
-      <label class="p-item"><span class="p-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7.5h3l1.6-2h6.8l1.6 2h3A1.8 1.8 0 0121.8 9.3v8.9a1.8 1.8 0 01-1.8 1.8H4a1.8 1.8 0 01-1.8-1.8V9.3A1.8 1.8 0 014 7.5z"/><circle cx="12" cy="13.5" r="3.4"/></svg></span><span>拍摄</span><input type="file" id="inCam" accept="image/*,video/*" capture="environment"></label>
-      <label class="p-item"><span class="p-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 6.5A1.8 1.8 0 015.3 4.7h4.3l2 2.1h7.1a1.8 1.8 0 011.8 1.8v9.1a1.8 1.8 0 01-1.8 1.8H5.3a1.8 1.8 0 01-1.8-1.8z"/></svg></span><span>文件</span><input type="file" id="inFile" multiple accept="*/*"></label>
-    </section>
   </div>
   <div class="ctx" id="ctxMenu"><div class="ctx-arr" id="ctxArr"></div><div id="ctxBtns" style="display:flex"></div></div>
-  <div class="sheet" id="sheet"><div class="sheet-top"><button class="sheet-close" id="btnSheetLeft" type="button">×</button><span class="sheet-pill" id="sheetTitle">已选项目</span><div class="sheet-top-r" id="sheetTopR"></div></div><div class="sheet-body" id="sheetBody"></div><div class="sheet-bottom"><div class="sh-acts" id="sheetActs"></div><button class="btn-go" id="btnConfirmSend" type="button">发送</button></div></div>
   <div class="viewer" id="viewer"><img id="viewerImg" alt=""><div class="viewer-bar"><span style="color:rgba(255,255,255,0.75);font-size:13px">长按图片可存相册</span><div class="viewer-acts"><button id="viewerEdit" type="button">编辑</button><button id="viewerSave" type="button">保存</button><button id="viewerClose" type="button">关闭</button></div></div></div>
   <div class="editor" id="editor" style="z-index:180"><div class="ed-top"><button id="edCancel" type="button">取消</button><button id="edUndo" type="button">撤销</button></div><canvas id="edCv"></canvas><div class="ed-bot"><div class="ed-tools" id="edTools"><button type="button" data-t="pen" class="on">画笔</button><button type="button" data-t="rect">方框</button><button type="button" data-t="mosaic">马赛克</button><button type="button" data-t="crop">裁剪</button><button type="button" id="edRot">旋转</button></div><button class="btn-go" id="edDone" type="button">完成</button></div></div>
   <div class="toast" id="toast"></div>
@@ -84,12 +68,12 @@
     const $ = (id) => document.getElementById(id), el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
     const app = $('app'), list = $('chatList'), textInput = $('textInput'), composer = $('composer'), vv = window.visualViewport;
     const VIDEO_RE = /\.(mp4|mov|m4v|mkv|avi)$/i, isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    let rendered = new Map(), itemsMap = new Map(), lastTs = null, pending = [], sheetIdx = -1, curView = null, toastTimer = null, stick = true, pageVer = null, busy = false, plusOpen = false, lpTimer = null, lpFired = false;
+    let rendered = new Map(), itemsMap = new Map(), lastTs = null, curView = null, toastTimer = null, stick = true, pageVer = null, busy = false, lpTimer = null, lpFired = false;
     const showToast = (m, keep) => { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastTimer); if (!keep) toastTimer = setTimeout(() => t.classList.remove('show'), 1400); };
     const copyText = (t) => { const ok = () => showToast('已复制'), fb = () => { const a = el('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (_) {} a.remove(); }; (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(t).then(ok).catch(fb) : fb(); };
     const chipText = (ts) => { const d = new Date(ts * 1000), hm = d.toTimeString().slice(0, 5); return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}月${d.getDate()}日 ${hm}`; };
     const fileSub = (it, m) => { const s = it.status || ''; return s.includes('传输') ? `${it.size_str} · ${s}` : s === '已完成' ? `${it.size_str} · ${m ? '已发送' : '已接收'}` : (m ? it.size_str : `${it.size_str} · 轻点下载`); };
-    const toBottom = () => { list.scrollTop = list.scrollHeight; }, setPlus = (on) => { plusOpen = on; app.classList.toggle('plus', on); if (on) toBottom(); }, hideCtx = () => $('ctxMenu').classList.remove('open', 'below');
+    const toBottom = () => { list.scrollTop = list.scrollHeight; }, hideCtx = () => $('ctxMenu').classList.remove('open', 'below');
 
     let fullH = window.innerHeight, kbH = +localStorage.getItem('fh_kbh') || Math.round(fullH * 0.48), kbActive = false, touchY = 0, focusTimer = null;
     const EASE = { duration: 240, easing: 'cubic-bezier(0.32,0.72,0,1)' };
@@ -99,7 +83,7 @@
       app.style.height = (kbActive || kbOpen ? kbH : fullH) + 'px'; app.classList.toggle('kb', kbActive || kbOpen); if (stick) toBottom();
     }
     function openKb() {
-      hideCtx(); if (plusOpen) setPlus(false); if (kbActive) return;
+      hideCtx(); if (kbActive) return;
       kbActive = true; stick = true; const prevH = app.offsetHeight; textInput.classList.add('focusing'); void textInput.offsetHeight; textInput.focus();
       app.classList.add('kb'); app.style.height = kbH + 'px'; toBottom();
       if (prevH - kbH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: kbH + 'px' }], EASE);
@@ -109,12 +93,12 @@
     window.addEventListener('resize', fit); list.addEventListener('scroll', () => { hideCtx(); stick = list.scrollHeight - list.scrollTop - list.clientHeight < 60; }, { passive: true });
     $('kbShield').addEventListener('touchend', (e) => { e.preventDefault(); openKb(); }); $('kbShield').addEventListener('click', openKb); textInput.addEventListener('focus', openKb);
     textInput.addEventListener('blur', () => { kbActive = false; clearTimeout(focusTimer); textInput.classList.remove('focusing'); const prevH = app.offsetHeight; window.scrollTo(0, 0); fit(); const nextH = app.offsetHeight; if (nextH - prevH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: nextH + 'px' }], EASE); });
-    $('btnPlus').onclick = () => { hideCtx(); const next = !plusOpen; if (document.activeElement === textInput) textInput.blur(); setPlus(next); };
+    $('btnPlus').addEventListener('click', (e) => { hideCtx(); if (kbActive || document.activeElement === textInput) { e.preventDefault(); textInput.blur(); } });
     list.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
-    list.addEventListener('touchmove', (e) => { if (Math.abs(e.touches[0].clientY - touchY) > 8) { clearTimeout(lpTimer); if (document.activeElement === textInput) textInput.blur(); if (plusOpen) setPlus(false); } }, { passive: true });
-    list.addEventListener('click', (e) => { if (lpFired) { lpFired = false; return; } hideCtx(); if (!e.target.closest('.bubble,.pic,.file')) { textInput.blur(); if (plusOpen) setPlus(false); } });
+    list.addEventListener('touchmove', (e) => { if (Math.abs(e.touches[0].clientY - touchY) > 8) { clearTimeout(lpTimer); if (document.activeElement === textInput) textInput.blur(); } }, { passive: true });
+    list.addEventListener('click', (e) => { if (lpFired) { lpFired = false; return; } hideCtx(); if (!e.target.closest('.bubble,.pic,.file')) textInput.blur(); });
     document.addEventListener('click', (e) => { if (!e.target.closest('#ctxMenu')) hideCtx(); });
-    document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list,.sheet-body,.input-box,.viewer,#edCv')) e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list,.input-box,.viewer,#edCv')) e.preventDefault(); }, { passive: false });
 
     const openViewer = (it) => { curView = it; $('viewerImg').src = it.url + '?inline=1'; $('viewer').classList.add('open'); };
     const delItem = async (id) => { await fetch('/api/delete', { method: 'POST', body: JSON.stringify({ id }) }); syncQueue(); };
@@ -164,7 +148,7 @@
     async function syncQueue() {
       try {
         const data = await (await fetch('/api/files', { cache: 'no-store' })).json();
-        if (pageVer && data.page_ver !== pageVer && !textInput.value && !busy && !$('sheet').classList.contains('open') && !$('editor').classList.contains('open')) return location.replace('/?v=' + data.page_ver);
+        if (pageVer && data.page_ver !== pageVer && !textInput.value && !busy && !$('editor').classList.contains('open')) return location.replace('/?v=' + data.page_ver);
         pageVer = data.page_ver; const ids = new Set(data.files.map((f) => f.id));
         if ([...rendered.keys()].some((id) => !ids.has(id))) { rendered.clear(); lastTs = null; list.innerHTML = ''; }
         if (data.files.map(renderItem).some(Boolean) && stick) toBottom();
@@ -177,29 +161,12 @@
     $('btnSend').addEventListener('mousedown', (e) => e.preventDefault()); $('btnSend').onclick = sendText;
 
     const uploadOne = (f, i, n) => new Promise((res) => { const x = new XMLHttpRequest(); x.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name, mime: f.type || 'application/octet-stream', sender: 'phone' })); x.upload.onprogress = (e) => { if (e.lengthComputable) showToast((n > 1 ? `发送中 ${i + 1}/${n} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); }; x.onloadend = () => res(x.status === 200); x.send(f); });
-    const CHK_SVG = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8.4l3.1 3.1 6.5-6.8"/></svg>';
-    const makeChk = (it) => { const h = el('div', 'chk-hit'), c = el('div', 'chk' + (it.sel ? ' on' : '')); if (it.sel) c.innerHTML = CHK_SVG; h.appendChild(c); h.onclick = (e) => { e.stopPropagation(); it.sel = !it.sel; renderSheet(); }; return h; };
-    function addFiles(fl) { if (!fl || !fl.length) return; setPlus(false); for (const f of fl) pending.push({ file: f, isImg: /^image\//i.test(f.type), url: /^image\//i.test(f.type) ? URL.createObjectURL(f) : '', sel: true }); sheetIdx = -1; $('sheet').classList.add('open'); renderSheet(); }
-    ['inPhoto', 'inCam', 'inFile'].forEach((id) => { $(id).onchange = (e) => { addFiles(e.target.files); e.target.value = ''; }; });
-    function renderSheet() {
-      const body = $('sheetBody'), acts = $('sheetActs'), topR = $('sheetTopR'), selN = pending.filter((p) => p.sel).length;
-      body.innerHTML = ''; acts.innerHTML = ''; topR.innerHTML = ''; $('btnConfirmSend').disabled = selN === 0; $('btnConfirmSend').textContent = selN ? `发送(${selN})` : '发送';
-      if (sheetIdx >= 0 && pending[sheetIdx]) {
-        const it = pending[sheetIdx]; body.className = 'sheet-body single'; $('btnSheetLeft').textContent = '‹'; $('sheetTitle').textContent = `${sheetIdx + 1} / ${pending.length}`;
-        const c = el('div', 'chk' + (it.sel ? ' on' : '')); if (it.sel) c.innerHTML = CHK_SVG; c.onclick = () => { it.sel = !it.sel; renderSheet(); }; topR.appendChild(c);
-        body.appendChild(it.isImg ? Object.assign(el('img'), { src: it.url }) : el('div', 'tile-f', it.file.name));
-        const bk = el('button', '', '返回网格'); bk.onclick = () => { sheetIdx = -1; renderSheet(); }; acts.appendChild(bk);
-        if (it.isImg) { const ed = el('button', '', '编辑'); ed.onclick = () => openEditor(it.url, { sheetIdx }); acts.appendChild(ed); }
-      } else {
-        body.className = 'sheet-body'; $('btnSheetLeft').textContent = '×'; $('sheetTitle').textContent = '已选项目'; const g = el('div', 'grid');
-        pending.forEach((it, idx) => { const t = el('div', 'tile' + (it.sel ? ' sel' : '')); t.append(it.isImg ? Object.assign(el('img'), { src: it.url }) : el('div', 'tile-f', it.file.name), makeChk(it)); t.onclick = () => { sheetIdx = idx; renderSheet(); }; g.appendChild(t); });
-        const add = el('label', 'tile tile-add', '+'), inp = el('input'); inp.type = 'file'; inp.multiple = true; inp.accept = 'image/*,video/*,*/*'; inp.onchange = (e) => { addFiles(e.target.files); e.target.value = ''; }; add.appendChild(inp); g.appendChild(add); body.appendChild(g);
-        const pv = el('button', '', selN ? `预览(${selN})` : '预览'); pv.disabled = !selN; pv.onclick = () => { sheetIdx = pending.findIndex((p) => p.sel); renderSheet(); }; acts.appendChild(pv);
-      }
-    }
-    const closeSheet = () => { pending.forEach((p) => p.url && URL.revokeObjectURL(p.url)); pending = []; sheetIdx = -1; $('sheet').classList.remove('open'); };
-    $('btnSheetLeft').onclick = () => { if (sheetIdx >= 0) { sheetIdx = -1; renderSheet(); } else closeSheet(); };
-    $('btnConfirmSend').onclick = async () => { const files = pending.filter((p) => p.sel).map((p) => p.file); if (!files.length) return; closeSheet(); busy = true; stick = true; let ok = 0; for (let i = 0; i < files.length; i++) { if (await uploadOne(files[i], i, files.length)) ok++; syncQueue(); } busy = false; showToast(ok === files.length ? '已发送' : `有 ${files.length - ok} 个失败`); };
+    $('inFile').onchange = async (e) => {
+      const files = [...(e.target.files || [])]; e.target.value = ''; if (!files.length) return;
+      busy = true; stick = true; let ok = 0;
+      for (let i = 0; i < files.length; i++) { if (await uploadOne(files[i], i, files.length)) ok++; syncQueue(); }
+      busy = false; showToast(ok === files.length ? '已发送' : `有 ${files.length - ok} 个失败`);
+    };
 
     const cv = $('edCv'), ctx = cv.getContext('2d');
     let edTool = 'pen', edHist = [], edTarget = null, edPts = [], edCrop = null, edCropSnap = null, edDrag = false, edSnap = null;
@@ -227,7 +194,7 @@
     $('edCancel').onclick = () => { clearCrop(); $('editor').classList.remove('open'); };
     $('edDone').onclick = () => {
       if (edCrop && edCrop[2] > 20 && edCrop[3] > 20) { const [x, y, w, h] = edCrop.map(Math.round); clearCrop(); const d = ctx.getImageData(x, y, w, h); cv.width = w; cv.height = h; ctx.putImageData(d, 0, 0); }
-      cv.toBlob(async (b) => { if (!b) return; const f = new File([b], (edTarget && edTarget.name) || '编辑图片.png', { type: 'image/png' }); $('editor').classList.remove('open'); if (edTarget && edTarget.sheetIdx != null && pending[edTarget.sheetIdx]) { const it = pending[edTarget.sheetIdx]; URL.revokeObjectURL(it.url); it.file = f; it.url = URL.createObjectURL(f); renderSheet(); } else { busy = true; await uploadOne(f, 0, 1); busy = false; syncQueue(); showToast('已发送编辑图'); } }, 'image/png');
+      cv.toBlob(async (b) => { if (!b) return; const f = new File([b], (edTarget && edTarget.name) || '编辑图片.png', { type: 'image/png' }); $('editor').classList.remove('open'); busy = true; await uploadOne(f, 0, 1); busy = false; syncQueue(); showToast('已发送编辑图'); }, 'image/png');
     };
     let vTs = 0; $('viewer').addEventListener('touchstart', () => { vTs = Date.now(); }, { passive: true });
     $('viewer').onclick = (e) => { if (!e.target.closest('.viewer-acts') && (!vTs || Date.now() - vTs < 350)) $('viewer').classList.remove('open'); vTs = 0; };
