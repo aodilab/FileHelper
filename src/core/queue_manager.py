@@ -70,6 +70,8 @@ def check_existing_instance_and_send(files, port=DEFAULT_PORT):
     s.close()
     if rc != 0: return False
     try:
+        import ctypes
+        ctypes.windll.user32.AllowSetForegroundWindow(-1)
         req = urllib.request.Request(f"http://127.0.0.1:{port}/api/ping", headers={"User-Agent": "FileHelper-CLI"})
         with _DIRECT_OPENER.open(req, timeout=0.3) as resp:
             info = json.loads(resp.read().decode("utf-8"))

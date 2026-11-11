@@ -78,13 +78,13 @@ class FileHelperApp:
 
     def _present_window(self):
         try:
-            self.root.wm_state("normal"); self.root.deiconify(); self.root.update_idletasks()
+            self.root.deiconify(); self.root.wm_state("normal"); self.root.update_idletasks()
             u32 = ctypes.windll.user32; hwnd = u32.GetParent(self.root.winfo_id()) or self.root.winfo_id()
             if os.path.exists(ICON_ICO_PATH):
                 hicon = u32.LoadImageW(0, ICON_ICO_PATH, 1, 256, 256, 0x0010)
                 if hicon: u32.SendMessageW(hwnd, 0x0080, 1, hicon); u32.SendMessageW(hwnd, 0x0080, 0, hicon)
-            u32.ShowWindow(hwnd, 9); u32.SetForegroundWindow(hwnd)
-            self.root.attributes("-topmost", True); self.root.lift(); self.root.focus_force(); self.input_entry.focus_set()
+            u32.ShowWindow(hwnd, 5); u32.ShowWindow(hwnd, 9); u32.SetForegroundWindow(hwnd)
+            self.root.attributes("-topmost", True); self.root.lift(); self.root.focus_force(); self.redraw(); self.input_entry.focus_set()
             self.root.after(180, lambda: self.root.attributes("-topmost", False))
         except Exception: pass
 
