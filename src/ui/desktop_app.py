@@ -53,7 +53,7 @@ class FileHelperApp:
         if initial_files: self.file_queue.add_files(initial_files)
         self.last_item_count = len(self.file_queue.get_all())
         if self.last_item_count: self._scroll_to_bottom()
-        self.redraw(); self.root.after(50, self._present_window); self.poll_queue()
+        self.redraw(); self.root.after(5, self._present_window); self.poll_queue()
 
     def _calc_scale(self): return self.dpi_scale * (1.2 if self.win_w > int(900 * self.dpi_scale) else 1.0)
     def _draft_pil(self): return self.draft_image["pil"] if self.draft_image else None
@@ -225,6 +225,10 @@ class FileHelperApp:
         if files: self.file_queue.add_files(files); self._scroll_to_bottom()
 
     def poll_queue(self):
+        if self.file_queue.quit_requested:
+            try: self.server_thread.stop()
+            except Exception: pass
+            self.root.destroy(); sys.exit(0)
         if self.file_queue.consume_wakeup(): self._present_window()
         if self.file_queue.version != self.last_queue_version:
             self.last_queue_version = self.file_queue.version
@@ -232,19 +236,14 @@ class FileHelperApp:
             cur_len = len(self.file_queue.get_all())
             if cur_len > self.last_item_count: self._scroll_to_bottom()
             self.last_item_count = cur_len; self.redraw()
-        self.root.after(100, self.poll_queue)
+        self.root.after(60, self.poll_queue)
 
     def on_close(self):
-        try: self.server_thread.stop()
-        except Exception: pass
-        self.root.destroy(); sys.exit(0)
+        if self.image_viewer.win and self.image_viewer.win.winfo_exists(): self.image_viewer._close()
+        self.modal_open = False; self.root.withdraw()
 
 
 def launch_desktop_app(initial_files=None):
-    try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("FileHelper.App.1")
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("FileHelper.App.1"); ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception: pass
-    root = TkinterDnD.Tk()
-    FileHelperApp(root, initial_files=initial_files)
-    root.mainloop()
+    root = TkinterDnD.Tk(); FileHelperApp(root, initial_files=initial_files); root.mainloop()

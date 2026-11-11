@@ -1,9 +1,21 @@
 import os, io, json, time, shutil, socket, threading, urllib.request
 import win32clipboard
 from PIL import Image, ImageOps
-from config.settings import DATA_DIR, DEFAULT_PORT, IMAGE_EXTS
+from config.settings import BASE_DIR, DATA_DIR, DEFAULT_PORT, IMAGE_EXTS
 
 HISTORY_PATH, BLOBS_DIR = os.path.join(DATA_DIR, "history.json"), os.path.join(DATA_DIR, "blobs")
+_DIRECT_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
+def _latest_code_mtime():
+    latest = 0.0
+    for sub in ("config", "src"):
+        for root, _, files in os.walk(os.path.join(BASE_DIR, sub)):
+            for fn in files:
+                if fn.endswith(".py"):
+                    try: latest = max(latest, os.path.getmtime(os.path.join(root, fn)))
+                    except Exception: pass
+    return latest
 
 
 def copy_image_to_clipboard(item):
@@ -51,14 +63,26 @@ def format_size(b):
 
 
 def check_existing_instance_and_send(files, port=DEFAULT_PORT):
-    """If FileHelper is already running, forward dropped files via local HTTP IPC and exit."""
+    """If FileHelper is already running, wake it via direct loopback IPC (bypassing proxy) and exit."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.04)
+    rc = s.connect_ex(("127.0.0.1", port))
+    s.close()
+    if rc != 0: return False
     try:
         req = urllib.request.Request(f"http://127.0.0.1:{port}/api/ping", headers={"User-Agent": "FileHelper-CLI"})
-        with urllib.request.urlopen(req, timeout=0.8) as resp:
-            if json.loads(resp.read().decode("utf-8")).get("app") == "FileHelper":
+        with _DIRECT_OPENER.open(req, timeout=0.3) as resp:
+            info = json.loads(resp.read().decode("utf-8"))
+            if info.get("app") == "FileHelper":
+                if info.get("boot_ts", 0) < _latest_code_mtime():
+                    try: _DIRECT_OPENER.open(f"http://127.0.0.1:{port}/api/ping?quit=1", timeout=0.2).close()
+                    except Exception: pass
+                    time.sleep(0.12)
+                    return False
                 if files:
                     payload = json.dumps({"paths": [os.path.abspath(f) for f in files]}).encode("utf-8")
-                    with urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{port}/api/add", data=payload, headers={"Content-Type": "application/json"}), timeout=1.2): pass
+                    add_req = urllib.request.Request(f"http://127.0.0.1:{port}/api/add", data=payload, headers={"Content-Type": "application/json"})
+                    with _DIRECT_OPENER.open(add_req, timeout=0.8): pass
                 return True
     except Exception: pass
     return False
@@ -68,15 +92,16 @@ class FileQueue:
     """Thread-safe queue with local persistence across restarts; clicking Clear wipes 100% of local data."""
 
     def __init__(self, persist=True):
-        self.lock, self.persist = threading.Lock(), persist
+        self.lock, self.persist, self.boot_ts = threading.Lock(), persist, time.time()
         self.files, self.next_id, self.version = [], 1, 0
-        self.wakeup_requested, self.phone_connected = False, False
+        self.wakeup_requested, self.quit_requested, self.phone_connected = False, False, False
         if self.persist: self._load_history()
 
     def _load_history(self):
         if not os.path.exists(HISTORY_PATH): return
         try: records = json.loads(open(HISTORY_PATH, "r", encoding="utf-8").read())
         except Exception: return
+        deferred = []
         for rec in records if isinstance(records, list) else []:
             kind, iid = rec.get("kind"), str(rec.get("id", ""))
             if not iid: continue
@@ -84,16 +109,24 @@ class FileQueue:
                 rec["progress"] = 100; self.files.append(rec)
             elif kind == "file" and rec.get("path") and os.path.exists(rec["path"]):
                 p = rec["path"]; rec["size"] = os.path.getsize(p); rec["size_str"] = format_size(rec["size"])
-                rec["thumb"] = _make_thumb(p) if p.lower().endswith(IMAGE_EXTS) else None
-                rec.setdefault("progress", 0); rec.setdefault("speed", ""); self.files.append(rec)
+                rec["thumb"] = None; rec.setdefault("progress", 0); rec.setdefault("speed", ""); self.files.append(rec)
+                if p.lower().endswith(IMAGE_EXTS): deferred.append((rec, p))
             elif kind == "memory" and rec.get("blob"):
                 bp = os.path.join(BLOBS_DIR, rec["blob"])
                 if os.path.exists(bp):
                     raw_b = open(bp, "rb").read()
                     is_img = (rec.get("mime") or "").startswith("image/") or (rec.get("name") or "").lower().endswith(IMAGE_EXTS)
-                    rec.update({"bytes": raw_b, "thumb": _make_thumb(raw_b) if is_img else None, "progress": 0, "speed": ""})
+                    rec.update({"bytes": raw_b, "thumb": None, "progress": 0, "speed": ""})
                     self.files.append(rec)
+                    if is_img: deferred.append((rec, raw_b))
         self.next_id = max((int(f["id"]) for f in self.files if str(f.get("id", "")).isdigit()), default=0) + 1
+        if deferred:
+            def _hydrate():
+                for item, src in deferred:
+                    th = _make_thumb(src)
+                    if th is not None:
+                        with self.lock: item["thumb"] = th; self._bump_version()
+            threading.Thread(target=_hydrate, daemon=True).start()
 
     def _save_history(self):
         if not self.persist: return

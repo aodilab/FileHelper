@@ -67,8 +67,9 @@ def make_handler(file_queue, host_ip, port):
             parsed = urllib.parse.urlparse(self.path)
             path, inline = parsed.path, "inline=1" in (parsed.query or "")
             if path == "/api/ping":
-                file_queue.request_wakeup()
-                return self._send_json({"status": "ok", "app": "FileHelper"})
+                if "quit=1" in (parsed.query or ""): file_queue.quit_requested = True
+                else: file_queue.request_wakeup()
+                return self._send_json({"status": "ok", "app": "FileHelper", "boot_ts": file_queue.boot_ts})
             if path in ("/", "/index.html", "/api/files") or path.startswith("/download/"):
                 file_queue.mark_phone_connected()
             if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
@@ -212,13 +213,15 @@ class ServerThread:
         if not self.httpd:
             raise RuntimeError(f"无法绑定局域网服务端口 {self.port}")
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
-        for alt_port in (8787, 80):
-            try:
-                srv = ThreadedHTTPServer(("0.0.0.0", alt_port), make_handler(self.file_queue, self.host_ip, alt_port))
-                self.extra_servers.append(srv)
-                threading.Thread(target=srv.serve_forever, daemon=True).start()
-            except Exception:
-                pass
+        def _bind_extras():
+            for alt_port in (8787, 80):
+                try:
+                    srv = ThreadedHTTPServer(("0.0.0.0", alt_port), make_handler(self.file_queue, self.host_ip, alt_port))
+                    self.extra_servers.append(srv)
+                    threading.Thread(target=srv.serve_forever, daemon=True).start()
+                except Exception:
+                    pass
+        threading.Thread(target=_bind_extras, daemon=True).start()
 
     def stop(self):
         for srv in [self.httpd, *self.extra_servers]:

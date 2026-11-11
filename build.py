@@ -1,24 +1,24 @@
 import sys
 from src.core.queue_manager import check_existing_instance_and_send
-from src.ui.desktop_app import launch_desktop_app
-from scripts.icon_builder import build_app_icons, create_desktop_shortcut
-from scripts.visual_audit import audit_code_lines, render_audit_snapshots
 
 
 def main():
     args = sys.argv[1:]
 
     if "--icon" in args:
+        from scripts.icon_builder import build_app_icons
         build_app_icons()
         print("Icons generated in assets/.")
         return
 
     if "--shortcut" in args:
+        from scripts.icon_builder import create_desktop_shortcut
         path = create_desktop_shortcut()
         print(f"Shortcut created: {path}")
         return
 
     if "--audit" in args:
+        from scripts.visual_audit import audit_code_lines, render_audit_snapshots
         out_dir = None
         idx = args.index("--audit")
         if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
@@ -34,6 +34,8 @@ def main():
         return
 
     if "--all" in args:
+        from scripts.icon_builder import build_app_icons, create_desktop_shortcut
+        from scripts.visual_audit import audit_code_lines, render_audit_snapshots
         build_app_icons()
         create_desktop_shortcut()
         render_audit_snapshots(sync_assets=True)
@@ -49,6 +51,7 @@ def main():
     if check_existing_instance_and_send(dropped_files):
         sys.exit(0)
 
+    from src.ui.desktop_app import launch_desktop_app
     launch_desktop_app(initial_files=dropped_files)
 
 
