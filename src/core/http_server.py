@@ -68,8 +68,9 @@ def make_handler(file_queue, host_ip, port):
             parsed = urllib.parse.urlparse(self.path)
             path, inline = parsed.path, "inline=1" in (parsed.query or "")
             if path == "/api/ping":
-                if "quit=1" in (parsed.query or ""): file_queue.quit_requested = True
-                else: file_queue.request_wakeup()
+                qstr = parsed.query or ""
+                if "quit=1" in qstr: file_queue.quit_requested = True
+                elif "probe=1" not in qstr: file_queue.request_wakeup()
                 return self._send_json({"status": "ok", "app": "FileHelper", "boot_ts": file_queue.boot_ts, "desktop": file_queue.desktop_name})
             if path in ("/", "/index.html", "/api/files") or path.startswith("/download/"):
                 file_queue.mark_phone_connected()
@@ -83,11 +84,11 @@ def make_handler(file_queue, host_ip, port):
             if path == "/manifest.webmanifest":
                 return self._send_json({"name": "传输助手", "short_name": "传输助手", "start_url": "/", "display": "standalone", "background_color": "#ffffff", "theme_color": "#ffffff", "icons": [{"src": "/apple-touch-icon.png?v=2", "sizes": "180x180", "type": "image/png"}]})
             if path == "/api/files":
-                keys = ("id", "kind", "sender", "name", "text", "size", "size_str", "status", "progress", "ts")
+                keys = ("id", "kind", "sender", "name", "mime", "text", "size", "size_str", "status", "progress", "ts")
                 ratio = lambda t: round(t.size[1] / max(1, t.size[0]), 4) if t is not None else None
                 files_out = [{**{k: it.get(k) for k in keys}, "url": f"/download/{it['id']}", "ratio": ratio(it.get("thumb"))} for it in file_queue.get_all()]
                 page_ver = int(os.path.getmtime(MOBILE_HTML_PATH))
-                return self._send_json({"count": len(files_out), "version": file_queue.version, "page_ver": page_ver, "files": files_out})
+                return self._send_json({"count": len(files_out), "version": file_queue.version, "page_ver": page_ver, "alt_ports": getattr(file_queue, "alt_ports", []), "mdns": f"{socket.gethostname()}.local", "files": files_out})
             if path.startswith("/thumb/"):
                 item = file_queue.get_by_id(path.split("/thumb/")[1])
                 if not item or item.get("thumb") is None: return self._send_text("Not Found", status=404)
@@ -150,7 +151,8 @@ def make_handler(file_queue, host_ip, port):
             self.send_header("Content-Disposition", f'{disp}; filename="Media{ext}"; filename*=UTF-8\'\'{safe_utf8}')
             self.end_headers()
 
-            bytes_sent, start_ts, last_notify, track = 0, time.time(), 0.0, (disp != "inline")
+            bytes_sent, start_ts, last_notify, prev_status = 0, time.time(), 0.0, item.get("status", "等待发送")
+            track = (disp != "inline") and (content_length > 65536 or content_length == file_size)
             if track: file_queue.update_status(item["id"], status="正在传输", progress=0)
             try:
                 with open(file_path, "rb") as f:
@@ -171,7 +173,7 @@ def make_handler(file_queue, host_ip, port):
                             last_notify = now
                 if track: file_queue.update_status(item["id"], status="已完成", progress=100, speed="")
             except Exception:
-                pass
+                if track: file_queue.update_status(item["id"], status=prev_status, progress=100 if prev_status == "已完成" else 0, speed="")
 
         def _render_mobile_portal(self):
             with open(MOBILE_HTML_PATH, "r", encoding="utf-8") as f:
@@ -214,11 +216,15 @@ class ServerThread:
         if not self.httpd:
             raise RuntimeError(f"无法绑定局域网服务端口 {self.port}")
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
+        self.file_queue.alt_ports = []
         def _bind_extras():
-            for alt_port in (8787, 80):
+            for alt_port in (8787, 80, 0):
+                if alt_port == 0 and self.file_queue.alt_ports: break
+                if alt_port == self.port: continue
                 try:
                     srv = ThreadedHTTPServer(("0.0.0.0", alt_port), make_handler(self.file_queue, self.host_ip, alt_port))
                     self.extra_servers.append(srv)
+                    self.file_queue.alt_ports.append(srv.server_port)
                     threading.Thread(target=srv.serve_forever, daemon=True).start()
                 except Exception:
                     pass
