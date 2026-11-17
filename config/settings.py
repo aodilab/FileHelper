@@ -1,10 +1,35 @@
 import os
+import sys
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+IS_FROZEN = getattr(sys, "frozen", False)
+BASE_DIR = os.path.dirname(os.path.abspath(sys.executable)) if IS_FROZEN else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RESOURCE_DIR = getattr(sys, "_MEIPASS", BASE_DIR) if IS_FROZEN else BASE_DIR
+
+
+def _resolve_data_dir():
+    if not IS_FROZEN:
+        return os.path.join(BASE_DIR, "data")
+    # Portable folder keeps data/ beside FileHelper.exe; Program Files installs fall back to %LOCALAPPDATA%.
+    pf_roots = [os.environ.get(k, "") for k in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432")]
+    norm_base = os.path.normcase(os.path.abspath(BASE_DIR))
+    in_pf = any(p and norm_base.startswith(os.path.normcase(os.path.abspath(p)) + os.sep) for p in pf_roots)
+    if not in_pf:
+        try:
+            probe = os.path.join(BASE_DIR, ".write_probe")
+            with open(probe, "w", encoding="utf-8") as f:
+                f.write("")
+            os.remove(probe)
+            return os.path.join(BASE_DIR, "data")
+        except OSError:
+            pass
+    local_app = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    return os.path.join(local_app, "FileHelper", "data")
+
+
+ASSETS_DIR = os.path.join(RESOURCE_DIR, "assets")
+TEMPLATES_DIR = os.path.join(RESOURCE_DIR, "templates")
 SCRATCH_DIR = os.path.join(BASE_DIR, "scratch")
-DATA_DIR = os.path.join(BASE_DIR, "data")
+DATA_DIR = _resolve_data_dir()
 
 ICON_ICO_PATH = os.path.join(ASSETS_DIR, "app_icon.ico")
 ICON_PNG_PATH = os.path.join(ASSETS_DIR, "app_icon.png")

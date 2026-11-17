@@ -49,7 +49,7 @@ def build_app_icons():
 
 
 def create_desktop_shortcut():
-    """Create 文件传输助手.lnk on Windows Desktop pointing to build.py."""
+    """Create 文件传输助手.lnk on Windows Desktop pointing to the app executable or build.py."""
     if not os.path.exists(ICON_ICO_PATH) or not os.path.exists(APPLE_TOUCH_ICON_PATH):
         build_app_icons()
 
@@ -61,18 +61,24 @@ def create_desktop_shortcut():
         except Exception:
             pass
     shortcut_path = os.path.join(desktop_dir, "文件传输助手.lnk")
-    build_py = os.path.join(BASE_DIR, "build.py")
-
-    pythonw_path = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
-    if not os.path.exists(pythonw_path):
-        pythonw_path = sys.executable
-
     shell = win32com.client.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(shortcut_path)
-    shortcut.TargetPath = pythonw_path
-    shortcut.Arguments = f'"{build_py}"'
-    shortcut.WorkingDirectory = BASE_DIR
-    shortcut.IconLocation = f"{ICON_ICO_PATH}, 0"
+
+    if getattr(sys, "frozen", False):
+        shortcut.TargetPath = sys.executable
+        shortcut.Arguments = ""
+        shortcut.WorkingDirectory = os.path.dirname(os.path.abspath(sys.executable))
+        shortcut.IconLocation = f"{sys.executable}, 0"
+    else:
+        build_py = os.path.join(BASE_DIR, "build.py")
+        pythonw_path = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+        if not os.path.exists(pythonw_path):
+            pythonw_path = sys.executable
+        shortcut.TargetPath = pythonw_path
+        shortcut.Arguments = f'"{build_py}"'
+        shortcut.WorkingDirectory = BASE_DIR
+        shortcut.IconLocation = f"{ICON_ICO_PATH}, 0"
+
     shortcut.Description = "文件传输助手 - 局域网双向原画与剪贴板无痕传输"
     shortcut.Save()
     try:

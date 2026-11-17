@@ -32,27 +32,19 @@
 
 ---
 
-## 三、 电脑端安装与日常使用
+## 三、 快速安装与使用（Windows 10 / 11）
 
-### 1. 安装依赖并生成桌面图标
-- **环境要求**：Windows 10 / 11，Python 3.10+，电脑与 iPhone 处于同一路由器局域网（电脑有线、手机连 Wi-Fi 亦可）。
+### 方式 A：普通用户免环境安装（推荐，无需配置 Python）
+前往仓库右侧 [**Releases**](https://github.com/aodilab/FileHelper/releases) 页面，按需求任选一种下载：
 
-```powershell
-# 1. 克隆仓库并进入目录
-git clone https://github.com/aodilab/FileHelper.git
-cd FileHelper
+1. **绿色免安装版（`FileHelper-win64-portable.zip`）**：下载解压后，直接双击文件夹内的 **`FileHelper.exe`** 即可使用（本地记录保存在同目录 `data/`，删除文件夹即彻底卸载）。
+2. **标准安装包（`FileHelper-Setup.exe`）**：双击运行安装向导，可自动创建桌面快捷方式（支持把文件直接拖到桌面图标上快速发送）并自动添加 `8899` 端口防火墙放行规则。
 
-# 2. 安装依赖
-pip install -r requirements.txt
+> **首次运行提示**：
+> - 若 Windows 弹出 **「Windows 已保护你的电脑」（SmartScreen 提示）**，点击 **「更多信息」 → 「仍要运行」** 即可（开源项目未购买商业代码签名证书，源码完全公开可查）。
+> - 若系统弹出 **Windows 防火墙警报**，请勾选当前网络并点击 **「允许访问」**，否则同 Wi-Fi 下的 iPhone 将无法连接。
 
-# 3. 生成应用图标并在 Windows 桌面创建「文件传输助手」快捷方式
-python build.py --shortcut
-
-# 4. 启动桌面端
-python build.py
-```
-
-### 2. 电脑端高频交互
+### 方式 B：电脑端高频交互
 - **发文件 / 文件夹**：点击左下角 `+` 选择，或直接将文件拖拽进窗口，亦可直接把文件拖到桌面的 **「文件传输助手」图标** 上（单实例自动唤醒并入队）。
 - **发截图（微信同款草稿预览）**：截图后按 `Ctrl+V`，缩略草稿图直接嵌入底部输入框内（可点击放大预览/标注，按 `Backspace` 或点右上角 `×` 移除，按 `Enter` 或点「发送」发出）。
 - **发文字 / 网址**：底部输入框输入或粘贴文本，回车即发；点击任意文字气泡一键复制。
@@ -100,8 +92,21 @@ python build.py
 │   └── mobile_portal.html     # iPhone Safari / Web App 双向门户、右侧 + 一步选图直发与画布编辑器
 ├── scripts/
 │   ├── icon_builder.py        # 多尺寸 ICO/PNG/iOS Touch Icon 与桌面快捷方式生成
+│   ├── packager.py            # PyInstaller 绿色版压缩包与 Inno Setup 安装包构建
+│   ├── installer.iss          # Windows 安装向导脚本（含桌面图标与 8899 端口放行）
 │   └── visual_audit.py        # 桌面五态快照渲染、README 预览图同步与代码行数审计
 └── assets/                    # 应用图标与界面预览图
+```
+
+### 开发者源码运行与打包
+- **环境要求**：Windows 10 / 11，Python 3.10+。
+
+```powershell
+git clone https://github.com/aodilab/FileHelper.git
+cd FileHelper
+pip install -r requirements.txt
+python build.py --shortcut   # 创建桌面快捷方式
+python build.py              # 启动桌面端
 ```
 
 | 命令 | 说明 |
@@ -110,6 +115,7 @@ python build.py
 | `python build.py <文件路径...>` | 启动或唤醒现有窗口，并将指定文件/文件夹加入队列 |
 | `python build.py --shortcut` | 在 Windows 桌面创建 `文件传输助手.lnk` 快捷方式 |
 | `python build.py --icon` | 重新生成 `assets/` 下的多尺寸桌面与 iOS 图标 |
+| `python build.py --package` | 使用 PyInstaller 打包绿色免安装 `.zip`（若本机安装 Inno Setup 6 则同步生成 `Setup.exe`） |
 | `python build.py --audit` | 生成桌面五态自审快照并校验全项目代码行数规范 |
 | `python build.py --all` | 依次执行图标生成、快捷方式更新、README 预览图同步与代码审计 |
 

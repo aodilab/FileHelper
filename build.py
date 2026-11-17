@@ -52,6 +52,11 @@ def main():
         print("All build, preview sync, and audit tasks completed.")
         return
 
+    if "--package" in args:
+        from scripts.packager import build_release_packages
+        build_release_packages()
+        return
+
     # Filter out CLI flags; remaining arguments are dropped file paths
     dropped_files = [a for a in args if not a.startswith("--")]
 
