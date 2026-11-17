@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 1.0.0)"
+        description: "Release version (e.g. 1.0.1)"
         required: false
-        default: "1.0.0"
+        default: "1.0.1"
 
 permissions:
   contents: write
@@ -40,7 +40,7 @@ jobs:
           } else {
             $ver = "${{ inputs.version }}"
           }
-          if (-not $ver) { $ver = "1.0.0" }
+          if (-not $ver) { $ver = "1.0.1" }
           echo "version=$ver" >> $env:GITHUB_OUTPUT
 
       - name: Package portable zip and Setup.exe
@@ -60,7 +60,21 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: "文件传输助手 v${{ steps.meta.outputs.version }} (Windows 64位)"
+          body: |
+            ### ⬇️ 下载说明（在下方 `Assets` 中二选一下载即可，无需安装 Python）
+
+            1. **`FileHelper-Setup.exe`（推荐普通用户）**：Windows 标准安装包，双击两步完成安装，自动创建桌面「文件传输助手」图标并自动配置局域网防火墙放行规则。
+            2. **`FileHelper-win64-portable.zip`（免安装绿色版）**：下载后**先解压到文件夹**，双击里面的 `FileHelper.exe` 即可使用；关闭窗口后删除文件夹即彻底卸载。
+
+            *(注：`Source code` 开头的是给开发者看的源代码，普通用户无需下载。)*
+
+            ---
+
+            ### 💡 首次打开提示
+            - 若弹出蓝色提示框 **「Windows 已保护你的电脑」**：点击 **「更多信息」 → 「仍要运行」**。
+            - 绿色版首次打开若弹出 **Windows 防火墙提示**：请勾选并点击 **「允许访问」**，确保同一 Wi-Fi 下的手机能扫码连接。
+          generate_release_notes: false
           files: |
             dist/FileHelper-win64-portable.zip
             dist/FileHelper-Setup.exe

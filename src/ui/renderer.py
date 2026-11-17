@@ -165,11 +165,11 @@ class AppleNeoRenderer:
         hitboxes["modal_card_block"] = (mx, my, mx + mw, my + mh)
 
         url_str = f"http://{host_ip}:{port}"
-        self.p.text(draw, mx + mw / 2, my + 32, "用 iPhone 相机扫码", size=17, bold=True, color=TOKENS["space_black"], anchor="mm")
+        self.p.text(draw, mx + mw / 2, my + 32, "用手机相机或浏览器扫码", size=17, bold=True, color=TOKENS["space_black"], anchor="mm")
         self.p.paste_qr_code(canvas, url_str, mx + mw / 2, my + 58, size_px=168)
         draw = ImageDraw.Draw(canvas)
         self.p.text(draw, mx + mw / 2, my + 246, url_str, size=12.5, mono=True, color=TOKENS["text_body"], anchor="mm")
-        self.p.text(draw, mx + mw / 2, my + 268, "需和电脑连同一个 Wi-Fi", size=12, color=TOKENS["text_secondary"], anchor="mm")
+        self.p.text(draw, mx + mw / 2, my + 268, "需连同一 Wi-Fi（请勿用微信扫一扫）", size=12, color=TOKENS["text_secondary"], anchor="mm")
 
         bx, by, bw, bh = mx + 24, my + mh - 52, mw - 48, 38
         self.p.rounded_box(draw, bx, by, bw, bh, radius=8, bg=TOKENS["wx_green_hover"] if hover_id == "modal_done" else TOKENS["wx_green"])

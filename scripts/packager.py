@@ -66,6 +66,7 @@ def build_release_packages(version="1.0.0"):
         f"--add-data={ICON_PNG_PATH}{sep}assets",
         f"--add-data={APPLE_TOUCH_ICON_PATH}{sep}assets",
         "--collect-all=tkinterdnd2",
+        "--collect-all=pillow_heif",
         "--hidden-import=win32clipboard",
         "--hidden-import=win32com.client",
         "--exclude-module=numpy",

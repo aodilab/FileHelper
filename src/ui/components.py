@@ -27,20 +27,27 @@ class DrawPrimitives:
                 r"C:\Windows\Fonts",
             ]
             if mono:
-                names = ["HarmonyOS_Sans_SC_Medium.ttf", "consola.ttf", "Noto Sans SC (TrueType).otf"]
+                names = ["HarmonyOS_Sans_SC_Medium.ttf", "consola.ttf", "msyh.ttc", "Noto Sans SC (TrueType).otf", "simsun.ttc"]
             elif bold:
                 names = [
                     "HarmonyOS_Sans_SC_Medium.ttf",
                     "SourceHanSansCN-Medium.ttf",
                     "Noto Sans SC Medium (TrueType).otf",
+                    "msyhbd.ttc",
+                    "msyh.ttc",
                     "Dengb.ttf",
+                    "simhei.ttf",
+                    "simsun.ttc",
                 ]
             else:
                 names = [
                     "HarmonyOS_Sans_SC_Regular.ttf",
                     "SourceHanSansCN-Regular.ttf",
                     "Noto Sans SC (TrueType).otf",
+                    "msyh.ttc",
                     "Deng.ttf",
+                    "simhei.ttf",
+                    "simsun.ttc",
                 ]
             loaded = None
             for fn in names:

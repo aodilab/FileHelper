@@ -1,11 +1,12 @@
 import io, os, sys, ctypes
 import tkinter as tk
-from tkinter import filedialog
+import tkinter.font as tkfont
+from tkinter import filedialog, messagebox
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from PIL import Image, ImageGrab, ImageOps, ImageTk
 
-from config.settings import DEFAULT_PORT, ICON_ICO_PATH, ICON_PNG_PATH, TOKENS, WIN_WIDTH, WIN_HEIGHT
-from src.core.queue_manager import FileQueue, copy_image_to_clipboard
+from config.settings import DEFAULT_PORT, ICON_ICO_PATH, ICON_PNG_PATH, IMAGE_EXTS, TOKENS, WIN_WIDTH, WIN_HEIGHT
+from src.core.queue_manager import FileQueue, copy_image_to_clipboard, get_local_ip
 from src.core.http_server import ServerThread
 from src.ui.renderer import AppleNeoRenderer
 from src.ui.image_viewer import ImageViewerWindow
@@ -25,6 +26,8 @@ class FileHelperApp:
             if os.path.exists(ICON_ICO_PATH): self.root.iconbitmap(default=ICON_ICO_PATH)
             if os.path.exists(ICON_PNG_PATH): self._icon_img = ImageTk.PhotoImage(Image.open(ICON_PNG_PATH)); self.root.iconphoto(True, self._icon_img)
         except Exception: pass
+        fams = set(tkfont.families(self.root))
+        self.ui_font = next((f for f in ("HarmonyOS Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", "SimHei") if f in fams), "TkDefaultFont")
         self.file_queue = FileQueue()
         self.server_thread = ServerThread(self.file_queue, port=DEFAULT_PORT); self.server_thread.start()
         self.renderer, self.image_viewer = AppleNeoRenderer(self.win_w, self.win_h, ui_scale=self._calc_scale()), ImageViewerWindow(self)
@@ -33,7 +36,7 @@ class FileHelperApp:
         self.hitboxes, self.tk_img, self._entry_state, self.last_item_count, self.last_queue_version = {}, None, None, 0, -1
         self.canvas = tk.Canvas(self.root, width=self.win_w, height=self.win_h, bg=TOKENS["canvas_bg_hex"], highlightthickness=0, bd=0)
         self.canvas.pack(fill=tk.BOTH, expand=True); self.canvas_img_id = self.canvas.create_image(0, 0, anchor="nw")
-        self.input_entry = tk.Entry(self.root, bg="#ffffff", fg="#111111", insertbackground="#07c160", relief="flat", bd=0, highlightthickness=0, font=("HarmonyOS Sans SC", 11))
+        self.input_entry = tk.Entry(self.root, bg="#ffffff", fg="#111111", insertbackground="#07c160", relief="flat", bd=0, highlightthickness=0, font=(self.ui_font, 11))
         self.input_entry.bind("<Return>", lambda e: self.send_input_text())
         self.entry_menu = tk.Menu(self.root, tearoff=0)
         for lbl, fn in [("粘贴", self.on_paste), ("清空输入", self._clear_composer)]: self.entry_menu.add_command(label=lbl, command=fn)
@@ -68,7 +71,7 @@ class FileHelperApp:
             if self.draft_image and not self.modal_open: self.canvas.focus_set()
             return
         sc = self.renderer.ui_scale
-        self.input_entry.configure(font=("HarmonyOS Sans SC", max(10, int(round(11 * sc / self.dpi_scale)))))
+        self.input_entry.configure(font=(self.ui_font, max(10, int(round(11 * sc / self.dpi_scale)))))
         self.input_entry.place(x=int(64 * sc), y=int((self.renderer.height - 39) * sc), width=max(120, int((self.renderer.width - 148) * sc)), height=int(24 * sc))
 
     def on_resize(self, event):
@@ -122,7 +125,7 @@ class FileHelperApp:
             if box and box[0] <= x <= box[2] and box[1] <= y <= box[3]: return "modal_done"
             cbox = self.hitboxes.get("modal_card_block")
             return None if (cbox and cbox[0] <= x <= cbox[2] and cbox[1] <= y <= cbox[3]) else "modal_backdrop"
-        for k, box in reversed(list(self.hitboxes.items())):
+        for k, box in reversed(list(self.hitboxes.items())) if self.hitboxes else ():
             if box[0] <= x <= box[2] and box[1] <= y <= box[3]: return k
         return None
 
@@ -130,10 +133,8 @@ class FileHelperApp:
         hit = self._hit_test(event.x, event.y)
         self.root.configure(cursor="hand2" if (hit and hit not in ("modal_backdrop", "composer_box")) else "")
         if hit != self.hover_id: self.hover_id = hit; self.redraw()
-
     def on_mouse_leave(self, event):
         if self.hover_id is not None: self.hover_id = None; self.root.configure(cursor=""); self.redraw()
-
     def on_right_click(self, event):
         if not self.modal_open and event.y >= (self.renderer.height - self.renderer.draft_dims(self._draft_pil())[2]) * self.renderer.ui_scale:
             self.entry_menu.tk_popup(event.x_root, event.y_root)
@@ -146,7 +147,7 @@ class FileHelperApp:
             self.set_draft_image(clip_data, buf.getvalue(), name="剪贴板截图.png"); return "break"
         if isinstance(clip_data, list) and clip_data:
             p0 = str(clip_data[0])
-            if len(clip_data) == 1 and os.path.isfile(p0) and os.path.splitext(p0)[1].lower() in (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"):
+            if len(clip_data) == 1 and os.path.isfile(p0) and os.path.splitext(p0)[1].lower() in (*IMAGE_EXTS, ".bmp"):
                 try: self.draft_image = {"pil": ImageOps.exif_transpose(Image.open(p0)).convert("RGBA"), "path": p0, "name": os.path.basename(p0)}; self.redraw(); return "break"
                 except Exception: pass
             self.file_queue.add_files([str(p) for p in clip_data]); self._scroll_to_bottom(); return "break"
@@ -163,7 +164,7 @@ class FileHelperApp:
         elif hit == "draft_clear": self._on_draft_key()
         elif hit == "draft_preview" and self.draft_image: self.image_viewer.open_pil(self.draft_image["pil"])
         elif hit == "composer_box": (self.canvas if self.draft_image else self.input_entry).focus_set()
-        elif hit == "btn_connect": self.modal_open, self.hover_id = True, None; self.redraw()
+        elif hit == "btn_connect": self.server_thread.host_ip = get_local_ip(); self.modal_open, self.hover_id = True, None; self.redraw()
         elif hit in ("modal_done", "modal_backdrop"): self.modal_open, self.hover_id = False, None; self.redraw()
         elif hit == "btn_choose": self.choose_files()
         elif hit == "btn_clear": self.scroll_y = self.target_scroll_y = 0.0; self.file_queue.clear_all()
@@ -177,13 +178,12 @@ class FileHelperApp:
 
     def _save_item_to_disk(self, item_id):
         item = self.file_queue.get_by_id(item_id)
-        raw = item.get("bytes") if item else None
-        if item and not raw and item.get("path") and os.path.exists(item["path"]):
-            with open(item["path"], "rb") as f: raw = f.read()
-        if not raw: return
+        src_p, raw = (item.get("path") if item else None), (item.get("bytes") if item else None)
+        if not raw and (not src_p or not os.path.exists(src_p)): return
         save_p = filedialog.asksaveasfilename(initialfile=item.get("name", "image.png"), title="保存图片或文件")
         if save_p:
-            with open(save_p, "wb") as f: f.write(raw)
+            if raw: open(save_p, "wb").write(raw)
+            elif os.path.abspath(src_p) != os.path.abspath(save_p): __import__("shutil").copyfile(src_p, save_p)
             self._flash_status(item_id, "已保存")
 
     def _handle_row_click(self, item_id, action="row"):
@@ -193,7 +193,7 @@ class FileHelperApp:
         elif item.get("thumb") is not None:
             if action == "copy" and copy_image_to_clipboard(item): self._flash_status(item_id, "已复制")
             elif action != "copy": self.image_viewer.open_item(item_id)
-        elif item.get("kind") == "memory" and item.get("bytes"): self._save_item_to_disk(item_id)
+        elif item.get("kind") == "memory": self._save_item_to_disk(item_id)
 
     def on_mouse_wheel(self, event):
         if self.modal_open or (self.image_viewer.win and self.image_viewer.win.winfo_exists() and event.widget.winfo_toplevel() == self.image_viewer.win): return
@@ -209,26 +209,20 @@ class FileHelperApp:
 
     def on_drag_enter(self, event):
         if not self.drag_active: self.drag_active = True; self.redraw()
-
     def on_drag_leave(self, event):
         if self.drag_active: self.drag_active = False; self.redraw()
-
     def on_tkdnd_drop(self, event):
         self.drag_active = False
         if not event or not event.data: return self.redraw()
         try: raw_files = self.root.tk.splitlist(event.data)
         except Exception: raw_files = [event.data]
         self.file_queue.add_files([str(f) for f in raw_files]); self._scroll_to_bottom(); self.redraw()
-
     def choose_files(self):
-        files = filedialog.askopenfilenames(title="选择要发送的视频或照片", filetypes=[("所有文件", "*.*")])
+        files = filedialog.askopenfilenames(title="选择要发送的视频、图片或文件", filetypes=[("所有文件", "*.*")])
         if files: self.file_queue.add_files(files); self._scroll_to_bottom()
 
     def poll_queue(self):
-        if self.file_queue.quit_requested:
-            try: self.server_thread.stop()
-            except Exception: pass
-            self.root.destroy(); sys.exit(0)
+        if self.file_queue.quit_requested: return self.on_close()
         if self.file_queue.consume_wakeup(): self._present_window()
         if self.file_queue.version != self.last_queue_version:
             self.last_queue_version = self.file_queue.version
@@ -240,11 +234,16 @@ class FileHelperApp:
         self.root.after(60, self.poll_queue)
 
     def on_close(self):
-        if self.image_viewer.win and self.image_viewer.win.winfo_exists(): self.image_viewer._close()
-        self.modal_open = False; self.root.withdraw()
+        for fn in (lambda: self.image_viewer.win and self.image_viewer.win.winfo_exists() and self.image_viewer.win.destroy(), self.server_thread.stop, self.root.destroy):
+            try: fn()
+            except Exception: pass
+        sys.exit(0)
 
 
 def launch_desktop_app(initial_files=None):
     try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("FileHelper.App.1"); ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception: pass
-    root = TkinterDnD.Tk(); FileHelperApp(root, initial_files=initial_files); root.mainloop()
+    root = TkinterDnD.Tk()
+    try: FileHelperApp(root, initial_files=initial_files); root.mainloop()
+    except SystemExit: raise
+    except Exception as e: messagebox.showerror("文件传输助手", f"启动失败：{e}"); raise
