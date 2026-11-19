@@ -125,7 +125,7 @@
       const vid = isVideo(it), go = $('dlGo'), setGo = (t, off) => { go.textContent = t; go.style.pointerEvents = off ? 'none' : ''; go.style.opacity = off ? '0.6' : ''; };
       $('dlTitle').textContent = it.name; $('dlCopy').className = 'dl-btn-sub'; $('dlCopy').onclick = () => copyText(location.origin + it.url, '已复制下载链接');
       $('dlClose').style.display = inSvc ? 'none' : 'flex'; $('dlClose').onclick = () => $('dlModal').classList.remove('open');
-      go.style.display = 'flex'; go.className = 'btn-go'; go.href = it.url; go.download = it.name || 'file';
+      go.style.display = 'flex'; go.className = 'btn-go'; go.href = it.url; go.download = it.name || 'file'; if (inSvc) { go.removeAttribute('target'); } else { go.target = '_blank'; go.rel = 'noopener'; }
       setGo(vid ? '跳转到系统保存（点更多…）' : '立即下载', false); $('dlSub').textContent = `${it.size_str} · 点下方打开后选「更多… → ${vid ? '存储视频' : '存储到“文件”'}」`;
       if (inSvc && (it.size || 0) <= 262144000) { setGo('正在准备文件 0%', true); const x = new XMLHttpRequest(); x.open('GET', it.url); x.responseType = 'blob'; x.onprogress = (e) => e.lengthComputable && setGo(`正在准备文件 ${Math.round(e.loaded / e.total * 100)}%`, true); x.onload = () => x.status === 200 ? (go.href = URL.createObjectURL(x.response), setGo(vid ? '打开「更多…」存相册' : '点击保存文件', false)) : setGo('直接下载', false); x.onerror = () => setGo('直接下载', false); x.send(); }
       $('dlModal').classList.add('open');
@@ -201,7 +201,7 @@
     textInput.addEventListener('input', autoGrow); textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendText(); } });
     $('btnSend').addEventListener('mousedown', (e) => e.preventDefault()); $('btnSend').onclick = sendText;
 
-    const uploadOne = (f, i, n) => new Promise((res) => { const x = new XMLHttpRequest(); x.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name, mime: f.type || 'application/octet-stream', sender: 'phone' })); x.upload.onprogress = (e) => { if (e.lengthComputable) showToast((n > 1 ? `发送中 ${i + 1}/${n} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); }; x.onloadend = () => { try { res(x.status === 200 && JSON.parse(x.responseText).success); } catch (_) { res(false); } }; x.send(f); });
+    const uploadOne = (f, i, n) => new Promise((res) => { const x = new XMLHttpRequest(); x.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name || '手机文件.bin', mime: f.type || 'application/octet-stream', sender: 'phone' })); x.upload.onprogress = (e) => { if (e.lengthComputable) showToast((n > 1 ? `发送中 ${i + 1}/${n} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); }; x.onloadend = () => { try { res(x.status === 200 && JSON.parse(x.responseText).success); } catch (_) { res(false); } }; x.send(f); });
     $('inFile').onchange = async (e) => {
       const files = [...(e.target.files || [])]; e.target.value = ''; if (!files.length) return;
       busy = true; stick = true; let ok = 0;

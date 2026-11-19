@@ -64,7 +64,7 @@ def main():
         sys.exit(0)
 
     from src.ui.desktop_app import launch_desktop_app
-    launch_desktop_app(initial_files=dropped_files)
+    launch_desktop_app(initial_files=dropped_files, start_hidden=("--tray" in args and not dropped_files))
 
 
 if __name__ == "__main__":

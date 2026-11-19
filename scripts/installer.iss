@@ -77,6 +77,7 @@ Filename: "{app}\FileHelper.exe"; Description: "立即打开 文件传输助手"
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/F /IM FileHelper.exe"; Flags: runhidden waituntilterminated; RunOnceId: "StopFileHelper"
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""FileHelper (LAN 8899)"""; Flags: runhidden waituntilterminated; RunOnceId: "DelFirewallRule"
+Filename: "reg"; Parameters: "delete ""HKCU\Software\Microsoft\Windows\CurrentVersion\Run"" /v FileHelper /f"; Flags: runhidden waituntilterminated; RunOnceId: "DelAutoStart"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\FileHelper"

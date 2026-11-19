@@ -1,4 +1,4 @@
-import io, os, sys, ctypes
+import gc, io, os, sys, ctypes
 import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import filedialog, messagebox
@@ -10,12 +10,13 @@ from src.core.queue_manager import FileQueue, copy_image_to_clipboard, get_local
 from src.core.http_server import ServerThread
 from src.ui.renderer import AppleNeoRenderer
 from src.ui.image_viewer import ImageViewerWindow
+from src.ui.tray_icon import TrayController, trim_working_set
 
 
 class FileHelperApp:
     """Main desktop window controller powered by TkinterDnD and AppleNeoRenderer."""
 
-    def __init__(self, root, initial_files=None):
+    def __init__(self, root, initial_files=None, start_hidden=False):
         self.root = root
         try: self.dpi_scale = max(1.0, ctypes.windll.user32.GetDpiForSystem() / 96.0)
         except Exception: self.dpi_scale = 1.0
@@ -50,17 +51,21 @@ class FileHelperApp:
         ]: self.canvas.bind(seq, fn)
         self.canvas.bind_all("<MouseWheel>", self.on_mouse_wheel)
         for seq in ("<Control-v>", "<Control-V>"): self.root.bind_all(seq, self.on_paste)
-        self.root.drop_target_register(DND_FILES)
-        for seq, fn in [("<<DropEnter>>", self.on_drag_enter), ("<<DropLeave>>", self.on_drag_leave), ("<<Drop>>", self.on_tkdnd_drop)]: self.root.dnd_bind(seq, fn)
+        self.tray = TrayController(self.file_queue.request_wakeup, lambda: setattr(self.file_queue, "quit_requested", True)); self.tray.start()
+        for w in (self.root, self.input_entry):
+            w.drop_target_register(DND_FILES)
+            for seq, fn in [("<<DropEnter>>", self.on_drag_enter), ("<<DropLeave>>", self.on_drag_leave), ("<<Drop>>", self.on_tkdnd_drop)]: w.dnd_bind(seq, fn)
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         if initial_files: self.file_queue.add_files(initial_files)
         self.last_item_count = len(self.file_queue.get_all())
-        if self.last_item_count: self._scroll_to_bottom()
-        self.redraw(); self.root.after(5, self._present_window); self.poll_queue()
+        if start_hidden: self.root.withdraw(); trim_working_set()
+        else:
+            if self.last_item_count: self._scroll_to_bottom()
+            self.redraw(); self.root.after(5, self._present_window)
+        self.poll_queue()
 
     def _calc_scale(self): return self.dpi_scale * (1.2 if self.win_w > int(900 * self.dpi_scale) else 1.0)
     def _draft_pil(self): return self.draft_image["pil"] if self.draft_image else None
-
     def _sync_input_entry(self):
         hide = self.modal_open or (self.draft_image is not None)
         state = (hide, self.win_w, self.win_h, self.renderer.ui_scale)
@@ -73,12 +78,9 @@ class FileHelperApp:
         sc = self.renderer.ui_scale
         self.input_entry.configure(font=(self.ui_font, max(10, int(round(11 * sc / self.dpi_scale)))))
         self.input_entry.place(x=int(64 * sc), y=int((self.renderer.height - 39) * sc), width=max(120, int((self.renderer.width - 148) * sc)), height=int(24 * sc))
-
     def on_resize(self, event):
         if event.width > 200 and event.height > 200 and (event.width != self.win_w or event.height != self.win_h):
-            self.win_w, self.win_h = event.width, event.height
-            self.renderer.set_size(self.win_w, self.win_h, ui_scale=self._calc_scale()); self.redraw()
-
+            self.win_w, self.win_h = event.width, event.height; self.renderer.set_size(self.win_w, self.win_h, ui_scale=self._calc_scale()); self.redraw()
     def _present_window(self):
         try:
             self.root.deiconify(); self.root.wm_state("normal"); self.root.update_idletasks()
@@ -90,45 +92,30 @@ class FileHelperApp:
             self.root.attributes("-topmost", True); self.root.lift(); self.root.focus_force(); self.redraw(); self.input_entry.focus_set()
             self.root.after(180, lambda: self.root.attributes("-topmost", False))
         except Exception: pass
-
     def _scroll_to_bottom(self): self.scroll_y = self.target_scroll_y = float(self.renderer.max_scroll(self.file_queue.get_all(), self._draft_pil()))
     def _clear_composer(self): self.draft_image = None; self.input_entry.delete(0, tk.END); self.redraw(); self.input_entry.focus_set()
     def set_draft_image(self, pil_img, raw_bytes, name=None):
-        cur_name = (self.draft_image or {}).get("name", "剪贴板截图.png")
-        self.draft_image = {"pil": pil_img.convert("RGBA"), "bytes": raw_bytes, "name": name or cur_name}; self.redraw()
-
+        self.draft_image = {"pil": pil_img.convert("RGBA"), "bytes": raw_bytes, "name": name or (self.draft_image or {}).get("name", "剪贴板截图.png")}; self.redraw()
     def _on_draft_key(self, event=None):
         if self.draft_image and not self.modal_open: self.draft_image, self.hover_id = None, None; self.redraw(); self.input_entry.focus_set()
-
     def send_input_text(self):
         sent = False
         if self.draft_image:
-            d, self.draft_image, self.hover_id = self.draft_image, None, None
+            d, self.draft_image, self.hover_id = self.draft_image, None, None; sent = True
             self.file_queue.add_files([d["path"]]) if d.get("path") else self.file_queue.add_memory_item(d["name"], d["bytes"], mime="image/png", sender="pc")
-            sent = True
         txt = self.input_entry.get().strip()
         if txt: self.input_entry.delete(0, tk.END); self.file_queue.add_text_item(txt, sender="pc"); sent = True
         if sent: self._scroll_to_bottom(); self.redraw(); self.input_entry.focus_set()
-
     def redraw(self):
         self._sync_input_entry()
-        pil_img, self.hitboxes = self.renderer.render(
-            items=self.file_queue.get_all(), host_ip=self.server_thread.host_ip, port=self.server_thread.port,
-            scroll_y=self.scroll_y, hover_id=self.hover_id, modal_open=self.modal_open,
-            drag_active=self.drag_active, phone_connected=self.file_queue.phone_connected, draft_img=self._draft_pil(),
-        )
+        pil_img, self.hitboxes = self.renderer.render(items=self.file_queue.get_all(), host_ip=self.server_thread.host_ip, port=self.server_thread.port, scroll_y=self.scroll_y, hover_id=self.hover_id, modal_open=self.modal_open, drag_active=self.drag_active, phone_connected=self.file_queue.phone_connected, draft_img=self._draft_pil())
         self.tk_img = ImageTk.PhotoImage(pil_img); self.canvas.itemconfig(self.canvas_img_id, image=self.tk_img)
-
     def _hit_test(self, x, y):
         if self.modal_open:
-            box = self.hitboxes.get("modal_done")
+            box, cbox = self.hitboxes.get("modal_done"), self.hitboxes.get("modal_card_block")
             if box and box[0] <= x <= box[2] and box[1] <= y <= box[3]: return "modal_done"
-            cbox = self.hitboxes.get("modal_card_block")
             return None if (cbox and cbox[0] <= x <= cbox[2] and cbox[1] <= y <= cbox[3]) else "modal_backdrop"
-        for k, box in reversed(list(self.hitboxes.items())) if self.hitboxes else ():
-            if box[0] <= x <= box[2] and box[1] <= y <= box[3]: return k
-        return None
-
+        return next((k for k, box in (reversed(list(self.hitboxes.items())) if self.hitboxes else ()) if box[0] <= x <= box[2] and box[1] <= y <= box[3]), None)
     def on_mouse_move(self, event):
         hit = self._hit_test(event.x, event.y)
         self.root.configure(cursor="hand2" if (hit and hit not in ("modal_backdrop", "composer_box")) else "")
@@ -136,8 +123,7 @@ class FileHelperApp:
     def on_mouse_leave(self, event):
         if self.hover_id is not None: self.hover_id = None; self.root.configure(cursor=""); self.redraw()
     def on_right_click(self, event):
-        if not self.modal_open and event.y >= (self.renderer.height - self.renderer.draft_dims(self._draft_pil())[2]) * self.renderer.ui_scale:
-            self.entry_menu.tk_popup(event.x_root, event.y_root)
+        if not self.modal_open and event.y >= (self.renderer.height - self.renderer.draft_dims(self._draft_pil())[2]) * self.renderer.ui_scale: self.entry_menu.tk_popup(event.x_root, event.y_root)
 
     def on_paste(self, event=None):
         try: clip_data = ImageGrab.grabclipboard()
@@ -222,28 +208,41 @@ class FileHelperApp:
         if files: self.file_queue.add_files(files); self._scroll_to_bottom()
 
     def poll_queue(self):
-        if self.file_queue.quit_requested: return self.on_close()
-        if self.file_queue.consume_wakeup(): self._present_window()
-        if self.file_queue.version != self.last_queue_version:
+        if self.file_queue.quit_requested: return self.quit_app()
+        hidden = self.root.state() == "withdrawn"
+        if self.file_queue.consume_wakeup():
+            if len(self.file_queue.get_all()) > self.last_item_count: self._scroll_to_bottom()
+            self.last_item_count = len(self.file_queue.get_all()); self.last_queue_version = self.file_queue.version
+            self._present_window(); hidden = False
+        elif self.file_queue.version != self.last_queue_version:
             self.last_queue_version = self.file_queue.version
             if self.file_queue.phone_connected and self.modal_open: self.modal_open = False
             cur_len = len(self.file_queue.get_all())
             if cur_len == 0: self.renderer.p._img_cache.clear()
             if cur_len > self.last_item_count: self._scroll_to_bottom()
-            self.last_item_count = cur_len; self.redraw()
-        self.root.after(60, self.poll_queue)
+            self.last_item_count = cur_len
+            if not hidden: self.redraw()
+        self.root.after(150 if hidden else 60, self.poll_queue)
 
     def on_close(self):
-        for fn in (lambda: self.image_viewer.win and self.image_viewer.win.winfo_exists() and self.image_viewer.win.destroy(), self.server_thread.stop, self.root.destroy):
+        if self.image_viewer.win and self.image_viewer.win.winfo_exists():
+            try: self.image_viewer.win.destroy()
+            except Exception: pass
+        self.modal_open = False; self.root.withdraw()
+        self.tk_img = None; self.canvas.itemconfig(self.canvas_img_id, image=""); self.renderer.p._img_cache.clear(); gc.collect(); trim_working_set()
+
+    def quit_app(self):
+        for fn in (self.tray.stop, lambda: self.image_viewer.win and self.image_viewer.win.winfo_exists() and self.image_viewer.win.destroy(), self.server_thread.stop, self.root.destroy):
             try: fn()
             except Exception: pass
         sys.exit(0)
 
 
-def launch_desktop_app(initial_files=None):
+def launch_desktop_app(initial_files=None, start_hidden=False):
     try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("FileHelper.App.1"); ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception: pass
     root = TkinterDnD.Tk()
-    try: FileHelperApp(root, initial_files=initial_files); root.mainloop()
+    if start_hidden: root.withdraw()
+    try: FileHelperApp(root, initial_files=initial_files, start_hidden=start_hidden); root.mainloop()
     except SystemExit: raise
     except Exception as e: messagebox.showerror("文件传输助手", f"启动失败：{e}"); raise

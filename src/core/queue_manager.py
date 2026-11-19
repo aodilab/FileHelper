@@ -204,7 +204,7 @@ class FileQueue:
             return {k: v for k, v in item.items() if k not in ("bytes", "thumb")}
 
     def add_memory_item(self, name, data_bytes, mime="image/png", sender="pc"):
-        if not data_bytes: return None
+        if data_bytes is None: return None
         raw_b = bytes(data_bytes)
         if self.persist:
             iid, blob_name, bp = self.alloc_blob(); open(bp, "wb").write(raw_b)

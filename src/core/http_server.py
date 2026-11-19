@@ -39,7 +39,7 @@ def make_handler(server_ref, file_queue, port):
             length = max(0, int(self.headers.get("Content-Length", 0) or 0))
             if path == "/api/upload":
                 file_queue.mark_phone_connected()
-                if length <= 0 or length > 20 * 1024**3:
+                if length < 0 or length > 20 * 1024**3:
                     return self._send_json({"success": False, "error": "invalid_length"}, status=400)
                 qs = urllib.parse.parse_qs(parsed.query)
                 name = os.path.basename(qs.get("name", ["手机图片.png"])[0]) or "手机文件.bin"
@@ -130,15 +130,20 @@ def make_handler(server_ref, file_queue, port):
         def _send_json(self, obj, status=200):
             self._send_text(json.dumps(obj, ensure_ascii=False), status=status, content_type="application/json; charset=utf-8")
 
+        def _disp_header(self, disp, name, ext):
+            stem = "".join(c if 32 <= ord(c) < 127 and c not in '"\\/' else "" for c in os.path.splitext(name)[0]).strip("._ ") or "file"
+            return f'{disp}; filename="{stem}{ext}"; filename*=UTF-8\'\'{urllib.parse.quote(name)}'
+
         def _stream_item(self, item, inline=False):
             disp = "inline" if inline else "attachment"
             if item.get("path") and os.path.exists(item["path"]):
                 return self._stream_disk_file(item, disp=disp)
             raw = item.get("bytes") or b""
+            ext = os.path.splitext(item["name"])[1].lower() or ".bin"
             self.send_response(200); self.send_cors_headers()
             self.send_header("Content-Type", item.get("mime") or "application/octet-stream")
             self.send_header("Content-Length", str(len(raw)))
-            self.send_header("Content-Disposition", f"{disp}; filename*=UTF-8''{urllib.parse.quote(item['name'])}")
+            self.send_header("Content-Disposition", self._disp_header(disp, item["name"], ext))
             self.end_headers(); self.wfile.write(raw)
             if item.get("sender") != "phone": file_queue.update_status(item["id"], status="已完成", progress=100)
 
@@ -148,11 +153,10 @@ def make_handler(server_ref, file_queue, port):
             file_size = os.path.getsize(file_path)
             ext = os.path.splitext(item["name"])[1].lower() or ".bin"
             content_type = MIME_OVERRIDES.get(ext) or item.get("mime") or mimetypes.guess_type(item["name"])[0] or "application/octet-stream"
-            safe_utf8 = urllib.parse.quote(item["name"])
             if file_size == 0:
                 self.send_response(200); self.send_cors_headers()
                 self.send_header("Content-Type", content_type); self.send_header("Content-Length", "0")
-                self.send_header("Content-Disposition", f'{disp}; filename="Media{ext}"; filename*=UTF-8\'\'{safe_utf8}')
+                self.send_header("Content-Disposition", self._disp_header(disp, item["name"], ext))
                 return self.end_headers()
             range_header = self.headers.get("Range", "")
             start, end, is_range = 0, file_size - 1, False
@@ -172,7 +176,7 @@ def make_handler(server_ref, file_queue, port):
             self.send_cors_headers()
             self.send_header("Content-Type", content_type); self.send_header("Content-Length", str(content_length))
             self.send_header("Accept-Ranges", "bytes")
-            self.send_header("Content-Disposition", f'{disp}; filename="Media{ext}"; filename*=UTF-8\'\'{safe_utf8}')
+            self.send_header("Content-Disposition", self._disp_header(disp, item["name"], ext))
             self.end_headers()
 
             bytes_sent, start_ts, last_notify, prev_status = 0, time.time(), 0.0, item.get("status", "等待发送")
