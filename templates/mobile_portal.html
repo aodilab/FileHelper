@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#F7F7F7"><meta name="color-scheme" content="light">
-  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="传输助手">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="传输助手">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2"><link rel="icon" type="image/png" sizes="180x180" href="/apple-touch-icon.png?v=2"><link rel="manifest" href="/manifest.webmanifest?v=2">
   <title>文件传输助手</title>
   <style>
     :root { --bg: #EDEDED; --bar: #F7F7F7; --line: #DCDCDC; --green: #95EC69; --wx: #07C160; --ink: #111; --sub: #8E8E93; --link: #576B95; }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bar); color: var(--ink); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", sans-serif; }
-    #pwa-safepill { position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bar); z-index: 50; pointer-events: none; transform: translateZ(0); }
+    #pwa-safepill { position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bar); z-index: 50; pointer-events: none; transform: translateZ(0); } html.is-android-app #pwa-safepill { display: none; }
     .app { position: fixed; top: 0; left: 0; right: 0; height: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
-    .top-bar { position: relative; z-index: 2; flex: none; height: 46px; background: var(--bar); border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: 0 8px; }
-    .top-title { grid-column: 2; text-align: center; font-size: 17px; font-weight: 500; } .btn-clear { grid-column: 3; justify-self: end; border: none; background: none; color: var(--link); font-size: 15px; padding: 6px 8px; }
-    .chat-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; padding: 6px 14px 16px; display: flex; flex-direction: column; }
-    .chip { align-self: center; margin: 20px 0 2px; font-size: 12px; color: var(--sub); } .chip:first-child { margin-top: 8px; }
-    .row { display: flex; flex-direction: column; max-width: 74%; margin-top: 12px; } .row:first-child { margin-top: 6px; }
-    .row.mine { align-self: flex-end; align-items: flex-end; } .row.theirs { align-self: flex-start; align-items: flex-start; }
+    .top-bar { position: relative; z-index: 2; flex: none; min-height: 48px; background: var(--bar); border-bottom: 0.5px solid var(--line); display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; padding: var(--sys-top, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) 0 max(8px, env(safe-area-inset-left, 0px)); }
+    .top-head { grid-column: 2; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 0; } .top-title { font-size: 16px; font-weight: 500; line-height: 1.2; }
+    .top-sub { font-size: 11px; color: var(--sub); line-height: 1.2; margin-top: 2px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .top-sub:empty { display: none; } .btn-clear { grid-column: 3; justify-self: end; border: none; background: none; color: var(--link); font-size: 15px; padding: 6px 8px; }
+    .chat-list { flex: 1; min-height: 0; overflow-y: auto; scroll-padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; padding: 6px 14px 16px; display: flex; flex-direction: column; }
+    .chip { align-self: center; margin: 20px 0 2px; font-size: 12px; color: var(--sub); } .chip:first-child { margin-top: 8px; } .who { font-size: 11px; color: var(--sub); line-height: 1.2; margin: 0 0 4px 2px; }
+    .row { display: flex; flex-direction: column; max-width: 74%; margin-top: 12px; } .row:first-child { margin-top: 6px; } .row.mine { align-self: flex-end; align-items: flex-end; } .row.theirs { align-self: flex-start; align-items: flex-start; }
     .bubble { position: relative; background: #fff; padding: 9px 12px; border-radius: 6px; font-size: 16px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; } .row.mine .bubble { background: var(--green); }
     .bubble::after { content: ""; position: absolute; top: 13px; border: 6px solid transparent; } .row.mine .bubble::after { right: -11px; border-left-color: var(--green); } .row.theirs .bubble::after { left: -11px; border-right-color: #fff; }
-    .bubble:active, .file:active, .pic:active { opacity: 0.84; } .pic { display: block; border-radius: 5px; background: #DADADA; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06); -webkit-touch-callout: default; user-select: auto; -webkit-user-select: auto; }
+    .bubble:active, .file:active, .pic:active { opacity: 0.84; } .pic { display: block; border-radius: 5px; background: #DADADA; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06); -webkit-touch-callout: none; user-select: none !important; -webkit-user-select: none !important; -webkit-user-drag: none; } html.ios-http .pic { -webkit-touch-callout: default; }
     .file { display: flex; align-items: center; gap: 12px; width: 232px; background: #fff; border-radius: 8px; padding: 12px 12px 12px 14px; text-decoration: none; color: inherit; position: relative; overflow: hidden; }
     .file-info { flex: 1; min-width: 0; } .file-sub { margin-top: 4px; font-size: 12px; color: var(--sub); }
     .file-name { font-size: 15px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
     .badge { flex: none; width: 36px; height: 42px; border-radius: 5px; color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; background: #8E8E93; } .badge.video { background: #5884F5; }
     .bar { position: absolute; left: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--wx); transition: width 0.3s; }
-    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 10px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px)) 16px; }
+    .composer { position: relative; z-index: 2; flex: none; background: var(--bar); border-top: 0.5px solid var(--line); display: flex; align-items: flex-end; gap: 10px; padding: 8px max(14px, env(safe-area-inset-right, 0px)) calc(8px + var(--sys-bottom, env(safe-area-inset-bottom, 0px))) max(16px, env(safe-area-inset-left, 0px)); }
     .app.kb .composer { padding: 7px 14px 7px 16px; }
     .input-wrap { position: relative; flex: 1; min-width: 0; min-height: 38px; background: #fff; border-radius: 8px; display: flex; }
     .kb-shield { position: absolute; inset: 0; z-index: 3; } .app.kb .kb-shield { display: none; }
@@ -42,9 +42,9 @@
     .ctx button { border: none; background: none; color: #fff; font-size: 13px; padding: 8px 12px; white-space: nowrap; position: relative; } .ctx button + button::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 0.5px; background: rgba(255,255,255,0.18); }
     .ctx-arr { position: absolute; width: 10px; height: 10px; background: #38383A; transform: rotate(45deg); bottom: -4px; } .ctx.below .ctx-arr { bottom: auto; top: -4px; }
     .viewer, .editor { position: fixed; inset: 0; background: #000; z-index: 160; display: none; flex-direction: column; align-items: center; justify-content: center; } .viewer.open, .editor.open { display: flex; }
-    .viewer img { max-width: 96%; max-height: 82%; object-fit: contain; -webkit-touch-callout: default; user-select: auto; } .viewer video { max-width: 96%; max-height: 82%; background: #000; outline: none; } #edCv { max-width: 96%; max-height: 74%; touch-action: none; background: #111; }
+    .viewer img { max-width: 96%; max-height: 82%; object-fit: contain; -webkit-touch-callout: none; user-select: none !important; -webkit-user-select: none !important; -webkit-user-drag: none; } html.is-ios .viewer img { -webkit-touch-callout: default; } .viewer video { max-width: 96%; max-height: 82%; background: #000; outline: none; } #edCv { max-width: 96%; max-height: 74%; touch-action: none; background: #111; }
     .viewer-bar, .ed-top, .ed-bot { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; color: #fff; font-size: 14px; }
-    .viewer-bar, .ed-bot { bottom: 0; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, rgba(0,0,0,0.8)); } .ed-top { top: 0; padding-top: calc(12px + env(safe-area-inset-top, 0px)); background: linear-gradient(rgba(0,0,0,0.7), transparent); }
+    .viewer-bar, .ed-bot { bottom: 0; padding-bottom: calc(14px + var(--sys-bottom, env(safe-area-inset-bottom, 0px))); background: linear-gradient(transparent, rgba(0,0,0,0.8)); } .ed-top { top: 0; padding-top: calc(12px + var(--sys-top, env(safe-area-inset-top, 0px))); background: linear-gradient(rgba(0,0,0,0.7), transparent); }
     .viewer-acts, .ed-tools { display: flex; align-items: center; gap: 16px; } .viewer-acts button, .ed-top button, .ed-tools button { border: none; background: none; color: #fff; font-size: 15px; padding: 4px 2px; } .ed-tools button.on { color: var(--wx); font-weight: 600; }
     .toast { position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%); width: max-content; max-width: calc(100vw - 48px); background: rgba(25,25,25,0.88); color: #fff; text-align: center; text-wrap: balance; white-space: normal; line-height: 1.45; padding: 10px 16px; border-radius: 8px; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 220; } .toast.show { opacity: 1; }
     .dl-modal { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.36); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 24px; } .dl-modal.open { display: flex; }
@@ -55,7 +55,7 @@
 <body>
   <div id="pwa-safepill"></div>
   <div class="app" id="app">
-    <div class="top-bar"><span class="top-title">文件传输助手</span><button class="btn-clear" id="btnClear" type="button">清空</button></div>
+    <div class="top-bar"><div class="top-head"><span class="top-title">文件传输助手</span><span class="top-sub" id="topSub"></span></div><button class="btn-clear" id="btnClear" type="button">清空</button></div>
     <main class="chat-list" id="chatList"></main>
     <footer class="composer" id="composer">
       <div class="input-wrap"><div class="kb-shield" id="kbShield"></div><textarea class="input-box" id="textInput" rows="1" enterkeyhint="send"></textarea></div>
@@ -71,26 +71,29 @@
   <script>
     const $ = (id) => document.getElementById(id), el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
     const app = $('app'), list = $('chatList'), textInput = $('textInput'), composer = $('composer'), vv = window.visualViewport;
-    const VIDEO_RE = /\.(mp4|mov|m4v|mkv|avi|webm)$/i, isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isStandalone = Boolean(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
-    const isVideo = (it) => VIDEO_RE.test(it.name || '') || (it.mime || '').startsWith('video/'), isImg = (it) => Boolean(it.ratio);
+    const VIDEO_RE = /\.(mp4|mov|m4v|mkv|avi|webm)$/i, ua = navigator.userAgent, androidApp = window.FileHelperAndroid || null, isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1), isAndroid = Boolean(androidApp) || /Android/i.test(ua);
+    if (androidApp) document.documentElement.classList.add('is-android-app'); if (isIOS) document.documentElement.classList.add('is-ios'); if (isIOS && !window.isSecureContext) document.documentElement.classList.add('ios-http'); const setBarDark = (dark) => { try { androidApp && androidApp.setLightStatusBar && androidApp.setLightStatusBar(!dark); } catch (_) {} };
+    const devKind = isIOS ? (/iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ipad' : 'ios') : isAndroid ? 'android' : 'phone', devLabel = { ios: 'iPhone', ipad: 'iPad', android: 'Android' }[devKind] || '手机';
+    const myCid = (() => { if (androidApp && androidApp.getDeviceCid) return androidApp.getDeviceCid(); const gen = () => devKind + '_' + Math.random().toString(36).slice(2, 8); try { const v = localStorage.getItem('fh_cid'); if (v && v.startsWith(devKind + '_')) return v; const n = gen(); localStorage.setItem('fh_cid', n); return n; } catch (_) { return gen(); } })();
+    const isMine = (it) => (it.sender_id ? it.sender_id === myCid : it.sender === 'phone'), senderName = (it) => it.sender_label || (it.sender === 'pc' ? '电脑' : '手机');
+    const isStandalone = Boolean(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)), isVideo = (it) => VIDEO_RE.test(it.name || '') || (it.mime || '').startsWith('video/'), isImg = (it) => Boolean(it.ratio);
     let rendered = new Map(), itemsMap = new Map(), lastTs = null, curView = null, toastTimer = null, stick = true, pageVer = null, busy = false, lpTimer = null, lpFired = false, altOrigin = null, altProbed = false;
     const dlParam = new URLSearchParams(location.search).get('dl');
     const showToast = (m, keep) => { const t = $('toast'); clearTimeout(toastTimer); if (!m) return t.classList.remove('show'); t.textContent = m; t.classList.add('show'); if (keep !== true) toastTimer = setTimeout(() => t.classList.remove('show'), typeof keep === 'number' ? keep : 1400); };
-    const copyText = (t, msg) => { const ok = () => showToast(msg || '已复制'), fb = () => { const a = el('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (_) {} a.remove(); }; (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(t).then(ok).catch(fb) : fb(); };
+    const copyText = (t, msg) => { if (androidApp && androidApp.copyText) { androidApp.copyText(t); return showToast(msg || '已复制'); } const ok = () => showToast(msg || '已复制'), fb = () => { const a = el('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (_) {} a.remove(); }; (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(t).then(ok).catch(fb) : fb(); };
     const chipText = (ts) => { const d = new Date(ts * 1000), hm = d.toTimeString().slice(0, 5); return d.toDateString() === new Date().toDateString() ? hm : `${d.getMonth() + 1}月${d.getDate()}日 ${hm}`; };
     const fileSub = (it, m) => { const s = it.status || ''; return s.includes('传输') ? `${it.size_str} · ${s}` : s === '已完成' ? `${it.size_str} · ${m ? '已发送' : '已接收'}` : (m ? it.size_str : `${it.size_str} · ${isVideo(it) ? '轻点播放 / 存相册' : '轻点下载到本地'}`); };
     const toBottom = () => { list.scrollTop = list.scrollHeight; }, hideCtx = () => { $('ctxMenu').classList.remove('open', 'below'); lpFired = false; };
 
     let fullH = window.innerHeight, kbH = +localStorage.getItem('fh_kbh') || Math.round(fullH * 0.48), kbActive = false, touchY = 0, focusTimer = null;
-    const EASE = { duration: 240, easing: 'cubic-bezier(0.32,0.72,0,1)' };
+    const EASE = { duration: 240, easing: 'cubic-bezier(0.32,0.72,0,1)' }; if (!isIOS) $('kbShield').style.display = 'none';
     function fit() {
-      const rawH = vv ? vv.height : window.innerHeight, kbOpen = rawH < screen.height - 220, atBot = kbActive || (list.scrollHeight - list.scrollTop - list.clientHeight < 60);
-      if (kbOpen) { kbH = rawH; localStorage.setItem('fh_kbh', kbH); } else if (!kbActive) fullH = rawH;
-      app.style.height = (kbActive || kbOpen ? kbH : fullH) + 'px'; app.classList.toggle('kb', kbActive || kbOpen); if (stick && atBot) toBottom();
+      const rawH = vv ? vv.height : window.innerHeight, kbOpen = rawH < (isIOS ? screen.height - 220 : fullH - 120), atBot = kbActive || (list.scrollHeight - list.scrollTop - list.clientHeight < 60);
+      if (isIOS) { if (kbOpen) { kbH = rawH; localStorage.setItem('fh_kbh', kbH); } else if (!kbActive) fullH = rawH; } else if (!kbOpen) fullH = Math.max(fullH, rawH);
+      app.style.height = (isIOS ? (kbActive || kbOpen ? kbH : fullH) : rawH) + 'px'; app.classList.toggle('kb', kbActive || kbOpen); if (stick && atBot) toBottom();
     }
     function openKb() {
-      hideCtx(); if (kbActive) return;
+      hideCtx(); if (!isIOS) { textInput.focus(); return; } if (kbActive) return;
       kbActive = true; stick = true; const prevH = app.offsetHeight; textInput.classList.add('focusing'); void textInput.offsetHeight; textInput.focus();
       app.classList.add('kb'); app.style.height = kbH + 'px'; toBottom();
       if (prevH - kbH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: kbH + 'px' }], EASE);
@@ -99,25 +102,24 @@
     if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', () => window.scrollTo(0, 0)); }
     window.addEventListener('resize', fit); list.addEventListener('scroll', () => { hideCtx(); stick = list.scrollHeight - list.scrollTop - list.clientHeight < 60; }, { passive: true });
     $('kbShield').addEventListener('touchend', (e) => { e.preventDefault(); openKb(); }); $('kbShield').addEventListener('click', openKb); textInput.addEventListener('focus', openKb);
-    textInput.addEventListener('blur', () => { kbActive = false; clearTimeout(focusTimer); textInput.classList.remove('focusing'); const prevH = app.offsetHeight; window.scrollTo(0, 0); fit(); const nextH = app.offsetHeight; if (nextH - prevH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: nextH + 'px' }], EASE); });
+    textInput.addEventListener('blur', () => { kbActive = false; clearTimeout(focusTimer); textInput.classList.remove('focusing'); const prevH = app.offsetHeight; window.scrollTo(0, 0); fit(); const nextH = app.offsetHeight; if (isIOS && nextH - prevH > 40 && app.animate) app.animate([{ height: prevH + 'px' }, { height: nextH + 'px' }], EASE); });
     $('btnPlus').addEventListener('click', (e) => { hideCtx(); if (kbActive || document.activeElement === textInput) { e.preventDefault(); textInput.blur(); } });
     list.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
     list.addEventListener('touchmove', (e) => { if (Math.abs(e.touches[0].clientY - touchY) > 8) { clearTimeout(lpTimer); if (document.activeElement === textInput) textInput.blur(); } }, { passive: true });
     list.addEventListener('click', (e) => { if (lpFired) { lpFired = false; return; } hideCtx(); if (!e.target.closest('.bubble,.pic,.file')) textInput.blur(); });
-    document.addEventListener('click', (e) => { if (!e.target.closest('#ctxMenu')) hideCtx(); });
-    document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list,.input-box,.viewer,#edCv')) e.preventDefault(); }, { passive: false });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#ctxMenu')) hideCtx(); }); if (!androidApp) document.addEventListener('touchmove', (e) => { if (!e.target.closest('.chat-list,.input-box,.viewer,#edCv')) e.preventDefault(); }, { passive: false });
 
-    function closeViewer() { $('viewer').classList.remove('open'); const v = $('viewerVid'); v.pause(); v.removeAttribute('src'); v.load(); curView = null; }
+    function closeViewer() { $('viewer').classList.remove('open'); setBarDark(false); const v = $('viewerVid'); v.pause(); v.removeAttribute('src'); v.load(); curView = null; }
     function openViewer(it) {
       curView = it; const vid = isVideo(it), imgEl = $('viewerImg'), vidEl = $('viewerVid');
       imgEl.style.display = vid ? 'none' : ''; vidEl.style.display = vid ? '' : 'none';
       $('viewerEdit').style.display = vid ? 'none' : '';
       $('viewerSave').style.display = (!vid && isIOS && !window.isSecureContext) ? 'none' : '';
-      $('viewerSave').textContent = vid ? '存相册' : '保存';
-      $('viewerHint').textContent = vid ? '视频预览' : '长按图片可存相册';
+      $('viewerSave').textContent = vid ? (isIOS || androidApp ? '存相册' : '保存') : '保存';
+      $('viewerHint').textContent = vid ? (isIOS ? '视频预览' : '点保存存相册') : (isIOS ? '长按图片可存相册' : '点保存存原图');
       if (vid) { imgEl.removeAttribute('src'); vidEl.src = `${it.url}?inline=1&t=${it.ts || 0}`; }
       else { vidEl.pause(); vidEl.removeAttribute('src'); imgEl.src = `${it.url}?inline=1&t=${it.ts || 0}`; }
-      $('viewer').classList.add('open');
+      $('viewer').classList.add('open'); setBarDark(true);
     }
     const delItem = async (id) => { await fetch('/api/delete', { method: 'POST', body: JSON.stringify({ id }) }); syncQueue(); };
     const triggerDl = (it, href) => { const a = el('a'); a.href = href || it.url; a.download = it.name || 'file'; document.body.appendChild(a); a.click(); a.remove(); };
@@ -132,6 +134,7 @@
     }
     async function saveMedia(it, toAlbum = true) {
       const vid = isVideo(it), img = isImg(it);
+      if (androidApp && androidApp.saveMedia) { androidApp.saveMedia(location.origin + it.url, it.name || (vid ? 'video.mp4' : img ? 'image.png' : 'file'), (toAlbum && img) ? 'image' : (toAlbum && vid) ? 'video' : 'file'); return; }
       if (toAlbum && (img || vid) && navigator.canShare && window.isSecureContext && (!vid || (it.size || 0) <= 52428800)) {
         try { if (vid) showToast('正在准备视频...', true); const b = await (await fetch(it.url)).blob(), f = new File([b], it.name || (vid ? 'video.mp4' : 'image.png'), { type: b.type || (vid ? 'video/mp4' : 'image/png') }); if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return showToast(''); } } catch (e) { if (e && e.name === 'AbortError') return showToast(''); }
       }
@@ -167,11 +170,12 @@
       itemsMap.set(it.id, it); if (rendered.has(it.id)) return updateItem(it);
       if (it.ts && (lastTs === null || it.ts - lastTs > 300)) list.appendChild(el('div', 'chip', chipText(it.ts)));
       if (it.ts) lastTs = it.ts;
-      const isMine = it.sender === 'phone', row = el('div', 'row ' + (isMine ? 'mine' : 'theirs'));
+      const mine = isMine(it), row = el('div', 'row ' + (mine ? 'mine' : 'theirs'));
+      if (!mine) row.appendChild(el('div', 'who', senderName(it)));
       if (it.kind === 'text') { const b = el('div', 'bubble', it.text || it.name); bindMsg(b, it, () => copyText(it.text || it.name)); row.appendChild(b); }
       else if (isImg(it)) {
         const w = Math.max(56, Math.min(152, 198 / it.ratio)), img = el('img', 'pic'); img.style.width = Math.round(w) + 'px'; img.style.height = Math.max(48, Math.min(200, Math.round(w * it.ratio))) + 'px';
-        img.loading = 'lazy'; img.decoding = 'async'; img.src = (it.size || 0) <= 26214400 ? `${it.url}?inline=1&t=${it.ts || 0}` : `/thumb/${it.id}?t=${it.ts || 0}`; img.alt = it.name;
+        img.draggable = false; img.loading = 'lazy'; img.decoding = 'async'; img.src = (it.size || 0) <= 26214400 ? `${it.url}?inline=1&t=${it.ts || 0}` : `/thumb/${it.id}?t=${it.ts || 0}`; img.alt = it.name;
         bindMsg(img, it, () => openViewer(it), isIOS && !window.isSecureContext); row.appendChild(img);
       } else {
         const a = el('div', 'file'), info = el('div', 'file-info'), sub = el('div', 'file-sub'), ext = ((it.name || '').split('.').pop() || 'FILE').slice(0, 4).toUpperCase(), bar = el('div', 'bar');
@@ -181,14 +185,16 @@
     }
     function updateItem(it) {
       const row = rendered.get(it.id); if (!row || !row._sub) return false;
-      row._sub.textContent = fileSub(it, it.sender === 'phone'); const pct = (it.status || '').includes('传输') ? (it.progress || 0) : 0;
+      row._sub.textContent = fileSub(it, isMine(it)); const pct = (it.status || '').includes('传输') ? (it.progress || 0) : 0;
       row._bar.style.width = pct ? `calc((100% - 28px) * ${pct / 100})` : '0'; return false;
     }
+    const peerQ = () => new URLSearchParams({ cid: myCid, dev: devLabel, kind: devKind }).toString();
+    const updatePeers = (devs) => { const n = (devs || []).map((d) => d.label).filter(Boolean); $('topSub').textContent = n.length ? ['电脑', ...n.slice(0, 2)].join(' · ') + (n.length > 2 ? ` 等${n.length + 1}端` : '') : '电脑'; };
     async function syncQueue() {
       try {
-        const data = await (await fetch('/api/files', { cache: 'no-store' })).json();
+        const data = await (await fetch('/api/files?' + peerQ(), { cache: 'no-store' })).json();
         if (pageVer && data.page_ver !== pageVer && !textInput.value && !busy && !$('editor').classList.contains('open')) return location.replace('/?v=' + data.page_ver);
-        pageVer = data.page_ver; const ids = new Set(data.files.map((f) => f.id));
+        pageVer = data.page_ver; updatePeers(data.devices); const ids = new Set(data.files.map((f) => f.id));
         if (!altProbed) { altProbed = true; const cand = [...new Set([8787, 80, ...(data.alt_ports || [])])].filter((p) => String(p) !== (location.port || '80')).map((p) => `http://${location.hostname}:${p}`); if (data.mdns && data.mdns !== location.hostname) cand.push(`http://${data.mdns}${location.port ? ':' + location.port : ''}`); cand.forEach((o) => fetch(`${o}/manifest.webmanifest`, { mode: 'cors', cache: 'no-store' }).then((r) => { if (r.ok && !altOrigin) altOrigin = o; }).catch(() => {})); }
         if ([...rendered.keys()].some((id) => !ids.has(id))) { rendered.clear(); lastTs = null; list.innerHTML = ''; }
         if (data.files.map(renderItem).some(Boolean) && stick) toBottom();
@@ -197,11 +203,11 @@
     }
 
     const autoGrow = () => { textInput.style.height = '38px'; textInput.style.height = Math.min(110, textInput.scrollHeight) + 'px'; composer.classList.toggle('typing', textInput.value.trim().length > 0); };
-    const sendText = async () => { const v = textInput.value.trim(); if (!v) return; textInput.value = ''; autoGrow(); stick = true; await fetch('/api/text', { method: 'POST', body: JSON.stringify({ text: v, sender: 'phone' }) }); syncQueue(); };
-    textInput.addEventListener('input', autoGrow); textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendText(); } });
+    const sendText = async () => { const v = textInput.value.trim(); if (!v) return; textInput.value = ''; autoGrow(); stick = true; await fetch('/api/text', { method: 'POST', body: JSON.stringify({ text: v, sender: devKind, sender_id: myCid, sender_label: devLabel }) }); syncQueue(); };
+    textInput.addEventListener('input', autoGrow); textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!e.isComposing && e.keyCode !== 229) sendText(); } });
     $('btnSend').addEventListener('mousedown', (e) => e.preventDefault()); $('btnSend').onclick = sendText;
 
-    const uploadOne = (f, i, n) => new Promise((res) => { const x = new XMLHttpRequest(); x.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name || '手机文件.bin', mime: f.type || 'application/octet-stream', sender: 'phone' })); x.upload.onprogress = (e) => { if (e.lengthComputable) showToast((n > 1 ? `发送中 ${i + 1}/${n} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); }; x.onloadend = () => { try { res(x.status === 200 && JSON.parse(x.responseText).success); } catch (_) { res(false); } }; x.send(f); });
+    const uploadOne = (f, i, n) => new Promise((res) => { const x = new XMLHttpRequest(); x.open('POST', '/api/upload?' + new URLSearchParams({ name: f.name || '手机文件.bin', mime: f.type || 'application/octet-stream', sender: devKind, cid: myCid, dev: devLabel })); x.upload.onprogress = (e) => { if (e.lengthComputable) showToast((n > 1 ? `发送中 ${i + 1}/${n} · ` : '发送中 ') + Math.round((e.loaded / e.total) * 100) + '%', true); }; x.onloadend = () => { try { res(x.status === 200 && JSON.parse(x.responseText).success); } catch (_) { res(false); } }; x.send(f); });
     $('inFile').onchange = async (e) => {
       const files = [...(e.target.files || [])]; e.target.value = ''; if (!files.length) return;
       busy = true; stick = true; let ok = 0;
@@ -209,12 +215,8 @@
       busy = false; showToast(ok === files.length ? '已发送' : `有 ${files.length - ok} 个失败`);
     };
 
-    const cv = $('edCv'), ctx = cv.getContext('2d');
-    let edTool = 'pen', edHist = [], edTarget = null, edPts = [], edCrop = null, edCropSnap = null, edDrag = false, edSnap = null;
-    function openEditor(src, target) {
-      edTarget = target; edHist = []; edCrop = edCropSnap = null; $('viewer').classList.remove('open');
-      const img = new Image(); img.onload = () => { const sc = Math.min(1, 2048 / Math.max(1, img.naturalWidth, img.naturalHeight)); cv.width = Math.max(1, Math.round(img.naturalWidth * sc)); cv.height = Math.max(1, Math.round(img.naturalHeight * sc)); ctx.drawImage(img, 0, 0, cv.width, cv.height); $('editor').classList.add('open'); }; img.src = src;
-    }
+    const cv = $('edCv'), ctx = cv.getContext('2d'); let edTool = 'pen', edHist = [], edTarget = null, edPts = [], edCrop = null, edCropSnap = null, edDrag = false, edSnap = null;
+    function openEditor(src, target) { edTarget = target; edHist = []; edCrop = edCropSnap = null; $('viewer').classList.remove('open'); const img = new Image(); img.onload = () => { const sc = Math.min(1, 2048 / Math.max(1, img.naturalWidth, img.naturalHeight)); cv.width = Math.max(1, Math.round(img.naturalWidth * sc)); cv.height = Math.max(1, Math.round(img.naturalHeight * sc)); ctx.drawImage(img, 0, 0, cv.width, cv.height); $('editor').classList.add('open'); setBarDark(true); }; img.src = src; }
     const cvPt = (e) => { const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [Math.max(0, Math.min(cv.width, (t.clientX - r.left) / r.width * cv.width)), Math.max(0, Math.min(cv.height, (t.clientY - r.top) / r.height * cv.height))]; };
     function drawEd(pts, tool) {
       const sw = Math.max(4, Math.round(Math.max(cv.width, cv.height) / 220)); ctx.strokeStyle = '#FA5151'; ctx.lineWidth = sw; ctx.lineCap = ctx.lineJoin = 'round';
@@ -232,19 +234,17 @@
     $('edTools').onclick = (e) => { const b = e.target.closest('button[data-t]'); if (!b) return; clearCrop(); edTool = b.dataset.t; [...$('edTools').querySelectorAll('button[data-t]')].forEach((x) => x.classList.toggle('on', x === b)); };
     $('edRot').onclick = () => { clearCrop(); pushEd(); const t = el('canvas'); t.width = cv.height; t.height = cv.width; const tc = t.getContext('2d'); tc.translate(t.width, 0); tc.rotate(Math.PI / 2); tc.drawImage(cv, 0, 0); cv.width = t.width; cv.height = t.height; ctx.drawImage(t, 0, 0); };
     $('edUndo').onclick = () => { if (edCropSnap) return clearCrop(); const s = edHist.pop(); if (s) { cv.width = s.width; cv.height = s.height; ctx.putImageData(s, 0, 0); } };
-    $('edCancel').onclick = () => { clearCrop(); $('editor').classList.remove('open'); };
+    $('edCancel').onclick = () => { clearCrop(); $('editor').classList.remove('open'); setBarDark(false); };
     $('edDone').onclick = () => {
       if (edCrop && edCrop[2] > 20 && edCrop[3] > 20) { const [x, y, w, h] = edCrop.map(Math.round); clearCrop(); const d = ctx.getImageData(x, y, w, h); cv.width = w; cv.height = h; ctx.putImageData(d, 0, 0); }
-      cv.toBlob(async (b) => { if (!b) return; const f = new File([b], (edTarget && edTarget.name) || '编辑图片.png', { type: 'image/png' }); $('editor').classList.remove('open'); busy = true; await uploadOne(f, 0, 1); busy = false; syncQueue(); showToast('已发送编辑图'); }, 'image/png');
+      cv.toBlob(async (b) => { if (!b) return; const f = new File([b], (edTarget && edTarget.name) || '编辑图片.png', { type: 'image/png' }); $('editor').classList.remove('open'); setBarDark(false); busy = true; await uploadOne(f, 0, 1); busy = false; syncQueue(); showToast('已发送编辑图'); }, 'image/png');
     };
-    let vTs = 0; $('viewer').addEventListener('touchstart', () => { vTs = Date.now(); }, { passive: true });
+    $('viewerImg').draggable = false; if (!isIOS) $('viewerImg').addEventListener('contextmenu', (e) => e.preventDefault()); let vTs = 0; $('viewer').addEventListener('touchstart', () => { vTs = Date.now(); }, { passive: true });
     $('viewer').onclick = (e) => { if (!e.target.closest('.viewer-acts,#viewerVid') && (!vTs || Date.now() - vTs < 350)) closeViewer(); vTs = 0; };
-    $('viewerEdit').onclick = () => curView && !isVideo(curView) && openEditor(curView.url + '?inline=1', { name: curView.name });
-    $('viewerSave').onclick = () => curView && saveMedia(curView);
-    $('viewerDel').onclick = () => { if (!curView) return; const id = curView.id; closeViewer(); delItem(id); };
-    $('viewerClose').onclick = closeViewer;
+    $('viewerEdit').onclick = () => curView && !isVideo(curView) && openEditor(curView.url + '?inline=1', { name: curView.name }); $('viewerSave').onclick = () => curView && saveMedia(curView);
+    $('viewerDel').onclick = () => { if (!curView) return; const id = curView.id; closeViewer(); delItem(id); }; $('viewerClose').onclick = closeViewer;
     $('btnClear').onclick = async () => { await fetch('/api/clear', { method: 'POST' }); syncQueue(); showToast('已清空'); };
+    window.__handleAndroidBack = () => { if ($('editor').classList.contains('open')) { $('edCancel').click(); return true; } if ($('viewer').classList.contains('open')) { closeViewer(); return true; } if ($('ctxMenu').classList.contains('open')) { hideCtx(); return true; } if ($('dlModal').classList.contains('open')) { $('dlModal').classList.remove('open'); return true; } return false; };
+    window.__refreshFromNative = () => { stick = true; syncQueue(); }; if (androidApp) document.querySelector('.top-head').onclick = () => androidApp.openConnect && androidApp.openConnect();
     fit(); syncQueue(); setInterval(syncQueue, 1500); if (/MicroMessenger/i.test(navigator.userAgent)) showToast('请点右上角 ··· 选「在默认浏览器打开」以正常收发保存', 6000);
-  </script>
-</body>
-</html>
+  </script></body></html>

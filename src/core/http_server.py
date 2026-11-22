@@ -2,7 +2,8 @@ import os, io, sys, json, time, socket, mimetypes, threading, urllib.parse, urll
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import TCPServer, ThreadingMixIn
 
-from config.settings import APPLE_TOUCH_ICON_PATH, DEFAULT_PORT, ICON_ICO_PATH, MIME_OVERRIDES, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
+from config.settings import APPLE_TOUCH_ICON_PATH, BASE_DIR, DEFAULT_PORT, ICON_ICO_PATH, ICON_PNG_PATH, MIME_OVERRIDES, MOBILE_HTML_PATH, STREAM_CHUNK_SIZE
+from src.core.peer_hub import detect_ua_device, start_lan_beacon
 from src.core.queue_manager import get_local_ip, format_size
 
 _NORM_EXE = os.path.normcase(os.path.abspath(sys.executable))
@@ -25,27 +26,33 @@ def make_handler(server_ref, file_queue, port):
         def log_message(self, fmt, *args): pass
         def _is_local(self): return self.client_address[0] in ("127.0.0.1", "::1")
 
+        def _touch_peer(self, qs=None, data=None):
+            ua_kind, ua_lbl = detect_ua_device(self.headers.get("User-Agent", ""))
+            src = data if isinstance(data, dict) else {}
+            qget = lambda k: (qs.get(k, [""])[0] if qs else "")
+            cid = (src.get("sender_id") or src.get("cid") or qget("cid") or "").strip() or None
+            kind = (src.get("sender") or src.get("kind") or qget("kind") or qget("sender") or ua_kind).strip() or ua_kind
+            lbl = (src.get("sender_label") or src.get("dev") or qget("dev") or "").strip() or (ua_lbl if kind == ua_kind else "")
+            if cid or not self._is_local():
+                file_queue.touch_client(cid=cid, label=lbl or ua_lbl, kind=kind, ip=self.client_address[0])
+            return kind, cid, lbl or ua_lbl
+
         def send_cors_headers(self, cache=False):
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type, Range")
-            self.send_header("Cache-Control", "private, max-age=3600" if cache else "no-store, no-cache, must-revalidate")
+            for k, v in (("Access-Control-Allow-Origin", "*"), ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"), ("Access-Control-Allow-Headers", "Content-Type, Range"), ("Cache-Control", "private, max-age=3600" if cache else "no-store, no-cache, must-revalidate")):
+                self.send_header(k, v)
 
         def do_OPTIONS(self): self.send_response(200); self.send_cors_headers(); self.end_headers()
 
         def do_POST(self):
             parsed = urllib.parse.urlparse(self.path)
-            path = parsed.path
-            length = max(0, int(self.headers.get("Content-Length", 0) or 0))
+            path, length = parsed.path, max(0, int(self.headers.get("Content-Length", 0) or 0))
             if path == "/api/upload":
-                file_queue.mark_phone_connected()
-                if length < 0 or length > 20 * 1024**3:
-                    return self._send_json({"success": False, "error": "invalid_length"}, status=400)
+                if length < 0 or length > 20 * 1024**3: return self._send_json({"success": False, "error": "invalid_length"}, status=400)
                 qs = urllib.parse.parse_qs(parsed.query)
-                name = os.path.basename(qs.get("name", ["手机图片.png"])[0]) or "手机文件.bin"
-                mime, sender = qs.get("mime", ["application/octet-stream"])[0], qs.get("sender", ["phone"])[0]
+                sender, cid, dev = self._touch_peer(qs=qs)
+                name, mime = os.path.basename(qs.get("name", ["手机图片.png"])[0]) or "手机文件.bin", qs.get("mime", ["application/octet-stream"])[0]
                 if not file_queue.persist:
-                    item = file_queue.add_memory_item(name, self.rfile.read(length), mime=mime, sender=sender)
+                    item = file_queue.add_memory_item(name, self.rfile.read(length), mime=mime, sender=sender, sender_id=cid, sender_label=dev)
                     return self._send_json({"success": bool(item), "item": item}, status=200 if item else 400)
                 iid, blob_name, bp = file_queue.alloc_blob()
                 try:
@@ -55,7 +62,7 @@ def make_handler(server_ref, file_queue, port):
                             chunk = self.rfile.read(min(STREAM_CHUNK_SIZE, rem))
                             if not chunk: raise ConnectionError("incomplete upload")
                             fp.write(chunk); rem -= len(chunk)
-                    item = file_queue.commit_blob_item(iid, blob_name, bp, name, mime=mime, sender=sender)
+                    item = file_queue.commit_blob_item(iid, blob_name, bp, name, mime=mime, sender=sender, sender_id=cid, sender_label=dev)
                     return self._send_json({"success": bool(item), "item": item}, status=200 if item else 400)
                 except Exception as e:
                     try: os.remove(bp)
@@ -65,15 +72,12 @@ def make_handler(server_ref, file_queue, port):
             body = self.rfile.read(length) if 0 < length <= 4 * 1024 * 1024 else b""
             if path == "/api/add":
                 if not self._is_local(): return self._send_text("Forbidden", status=403)
-                try:
-                    added = file_queue.add_files(json.loads(body.decode("utf-8")).get("paths", []))
-                    file_queue.request_wakeup(); self._send_json({"success": True, "added": added})
+                try: added = file_queue.add_files(json.loads(body.decode("utf-8")).get("paths", [])); file_queue.request_wakeup(); self._send_json({"success": True, "added": added})
                 except Exception as e: self._send_text(str(e), status=400)
             elif path == "/api/text":
                 try:
-                    file_queue.mark_phone_connected(); data = json.loads(body.decode("utf-8"))
-                    item = file_queue.add_text_item(data.get("text", ""), sender=data.get("sender", "phone"))
-                    self._send_json({"success": bool(item), "item": item})
+                    data = json.loads(body.decode("utf-8")); sender, cid, dev = self._touch_peer(data=data)
+                    self._send_json({"success": bool(item := file_queue.add_text_item(data.get("text", ""), sender=sender, sender_id=cid, sender_label=dev)), "item": item})
                 except Exception as e: self._send_text(str(e), status=400)
             elif path == "/api/delete":
                 try: file_queue.remove(json.loads(body.decode("utf-8")).get("id", "")); self._send_json({"success": True})
@@ -83,30 +87,28 @@ def make_handler(server_ref, file_queue, port):
 
         def do_GET(self):
             parsed = urllib.parse.urlparse(self.path)
-            path, inline = parsed.path, "inline=1" in (parsed.query or "")
+            path, qs, inline = parsed.path, urllib.parse.parse_qs(parsed.query), "inline=1" in (parsed.query or "")
             if path == "/api/ping":
                 qstr, is_loc = parsed.query or "", self._is_local()
                 if is_loc:
                     if "quit=1" in qstr: file_queue.quit_requested = True
                     elif "probe=1" not in qstr: file_queue.request_wakeup()
-                info = {"status": "ok", "app": "FileHelper"}
-                if is_loc:
-                    info.update({"boot_ts": file_queue.boot_ts, "desktop": file_queue.desktop_name, "exe": _NORM_EXE})
+                info = {"status": "ok", "app": "FileHelper", **({"boot_ts": file_queue.boot_ts, "desktop": file_queue.desktop_name, "exe": _NORM_EXE} if is_loc else {})}
                 return self._send_json(info)
-            if path in ("/", "/index.html", "/api/files") or path.startswith("/download/"):
-                file_queue.mark_phone_connected()
-            if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png") and os.path.exists(APPLE_TOUCH_ICON_PATH):
-                with open(APPLE_TOUCH_ICON_PATH, "rb") as f: return self._send_text(f.read(), content_type="image/png")
-            if path == "/favicon.ico" and os.path.exists(ICON_ICO_PATH):
-                with open(ICON_ICO_PATH, "rb") as f: return self._send_text(f.read(), content_type="image/x-icon")
+            if path in ("/", "/index.html", "/api/files") or path.startswith("/download/"): self._touch_peer(qs=qs)
+            icons = {"/apple-touch-icon.png": (APPLE_TOUCH_ICON_PATH, "image/png"), "/apple-touch-icon-precomposed.png": (APPLE_TOUCH_ICON_PATH, "image/png"), "/app-icon.png": (ICON_PNG_PATH, "image/png"), "/favicon.ico": (ICON_ICO_PATH, "image/x-icon")}
+            if path in icons and os.path.exists(icons[path][0]):
+                with open(icons[path][0], "rb") as f: return self._send_text(f.read(), content_type=icons[path][1])
+            if path == "/android.apk":
+                apk = os.path.join(BASE_DIR, "dist", "FileHelper-Android.apk")
+                return self._stream_disk_file({"id": "", "name": "FileHelper-Android.apk", "path": apk, "mime": "application/vnd.android.package-archive"}, disp="attachment") if os.path.exists(apk) else self._send_text("APK Not Found", status=404)
             if path == "/manifest.webmanifest":
-                return self._send_json({"name": "传输助手", "short_name": "传输助手", "start_url": "/", "display": "standalone", "background_color": "#ffffff", "theme_color": "#ffffff", "icons": [{"src": "/apple-touch-icon.png?v=2", "sizes": "180x180", "type": "image/png"}]})
+                return self._send_json({"name": "传输助手", "short_name": "传输助手", "start_url": "/", "display": "standalone", "background_color": "#F7F7F7", "theme_color": "#F7F7F7", "icons": [{"src": "/apple-touch-icon.png?v=2", "sizes": "180x180", "type": "image/png"}, {"src": "/app-icon.png?v=2", "sizes": "256x256", "type": "image/png"}]})
             if path == "/api/files":
-                keys = ("id", "kind", "sender", "name", "mime", "text", "size", "size_str", "status", "progress", "ts")
+                keys = ("id", "kind", "sender", "sender_id", "sender_label", "name", "mime", "text", "size", "size_str", "status", "progress", "ts")
                 ratio = lambda t: round(t.size[1] / max(1, t.size[0]), 4) if t is not None else None
                 files_out = [{**{k: it.get(k) for k in keys}, "url": f"/download/{it['id']}", "ratio": ratio(it.get("thumb"))} for it in file_queue.get_all()]
-                page_ver = int(os.path.getmtime(MOBILE_HTML_PATH))
-                return self._send_json({"count": len(files_out), "version": file_queue.version, "page_ver": page_ver, "alt_ports": getattr(file_queue, "alt_ports", []), "mdns": f"{socket.gethostname()}.local", "files": files_out})
+                return self._send_json({"count": len(files_out), "version": file_queue.version, "page_ver": int(os.path.getmtime(MOBILE_HTML_PATH)), "alt_ports": getattr(file_queue, "alt_ports", []), "mdns": f"{socket.gethostname()}.local", "devices": file_queue.get_active_devices(), "files": files_out})
             if path.startswith("/thumb/"):
                 item = file_queue.get_by_id(path.split("/thumb/")[1])
                 if not item or item.get("thumb") is None: return self._send_text("Not Found", status=404)
@@ -145,7 +147,7 @@ def make_handler(server_ref, file_queue, port):
             self.send_header("Content-Length", str(len(raw)))
             self.send_header("Content-Disposition", self._disp_header(disp, item["name"], ext))
             self.end_headers(); self.wfile.write(raw)
-            if item.get("sender") != "phone": file_queue.update_status(item["id"], status="已完成", progress=100)
+            if disp != "inline": file_queue.update_status(item["id"], status="已完成", progress=100)
 
         def _stream_disk_file(self, item, disp="attachment"):
             file_path = item.get("path", "")
@@ -180,7 +182,7 @@ def make_handler(server_ref, file_queue, port):
             self.end_headers()
 
             bytes_sent, start_ts, last_notify, prev_status = 0, time.time(), 0.0, item.get("status", "等待发送")
-            track = (disp != "inline") and item.get("sender") != "phone" and (content_length > 65536 or content_length == file_size)
+            track = (disp != "inline") and (content_length > 65536 or content_length == file_size)
             if track: file_queue.update_status(item["id"], status="正在传输", progress=0)
             try:
                 with open(file_path, "rb") as f:
@@ -209,8 +211,7 @@ def make_handler(server_ref, file_queue, port):
 class ServerThread:
     def __init__(self, file_queue, port=DEFAULT_PORT):
         self.file_queue, self.port, self.host_ip = file_queue, port, get_local_ip()
-        self.httpd, self.extra_servers = None, []
-
+        self.httpd, self.extra_servers, self._beacon_stop = None, [], threading.Event()
     @staticmethod
     def _retire_stale_self(port):
         try:
@@ -219,7 +220,6 @@ class ServerThread:
                     _LOOPBACK_OPENER.open(f"http://127.0.0.1:{port}/api/ping?quit=1", timeout=0.25).close()
                     time.sleep(0.25)
         except Exception: pass
-
     def start(self):
         for cand in (self.port, self.port, 8787, 8898, 0):
             try:
@@ -230,6 +230,7 @@ class ServerThread:
                 if cand == self.port: self._retire_stale_self(self.port)
         if not self.httpd: raise RuntimeError("无法启动局域网传输服务端口")
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
+        start_lan_beacon(lambda: self.port, self._beacon_stop)
         self.file_queue.alt_ports = []
         def _bind_extras():
             for alt_port in (8787, 80, 0):
@@ -241,8 +242,8 @@ class ServerThread:
                     threading.Thread(target=srv.serve_forever, daemon=True).start()
                 except Exception: pass
         threading.Thread(target=_bind_extras, daemon=True).start()
-
     def stop(self):
+        self._beacon_stop.set()
         for srv in [self.httpd, *self.extra_servers]:
             if srv:
                 try: srv.shutdown(); srv.server_close()

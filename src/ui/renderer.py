@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFilter
 from config.settings import SUPERSAMPLE_SCALE as S, TOKENS, WIN_WIDTH, WIN_HEIGHT
+from src.core.peer_hub import format_devices_summary
 from src.ui.components import DrawPrimitives
 from src.ui.chat_items import CHIP_H, ChatItemPainter, format_chip_time
 
@@ -40,7 +41,7 @@ class AppleNeoRenderer:
             if ts:
                 prev_ts = ts
             lay = self.painter.layout(it, max_w)
-            rows.append(("item", it, lay, self.painter.row_height(lay[2])))
+            rows.append(("item", it, lay, self.painter.row_height(lay[2], it.get("sender", "pc") == "pc")))
         return rows
 
     def draft_dims(self, draft_img=None):
@@ -57,8 +58,9 @@ class AppleNeoRenderer:
         return max(0, int(total_h - avail_h))
 
     # ---------- render ----------
-    def render(self, items, host_ip, port, scroll_y=0, hover_id=None, modal_open=False, drag_active=False, phone_connected=False, draft_img=None):
+    def render(self, items, host_ip, port, scroll_y=0, hover_id=None, modal_open=False, drag_active=False, phone_connected=False, draft_img=None, connected_devices=None):
         hitboxes = {}
+        devices = list(connected_devices) if connected_devices is not None else ([{"label": "手机", "kind": "phone"}] if phone_connected else [])
         need_alpha = modal_open or drag_active
         canvas = Image.new("RGBA" if need_alpha else "RGB", (self.W, self.H), TOKENS["canvas_bg"] if need_alpha else TOKENS["canvas_bg"][:3])
         dw, dh, comp_h = self.draft_dims(draft_img)
@@ -71,11 +73,11 @@ class AppleNeoRenderer:
             self.p.rounded_box(draw, 16, NAV_H + 8, self.width - 32, comp_top - NAV_H - 16, radius=14, bg=(7, 193, 96, 20), border=TOKENS["wx_green"])
             self.p.text(draw, self.width / 2, (NAV_H + comp_top) / 2, "松开鼠标即可发送", size=15, bold=True, color=TOKENS["semantic_green_text"], anchor="mm")
 
-        self._render_top_links(draw, hitboxes, hover_id, phone_connected)
+        self._render_top_links(draw, hitboxes, hover_id, devices)
         self._render_composer(canvas, draw, hitboxes, comp_top, comp_h, hover_id, draft_img, dw, dh)
 
         if modal_open:
-            canvas = self._render_modal_sheet(canvas, hitboxes, host_ip, port, hover_id)
+            canvas = self._render_modal_sheet(canvas, hitboxes, host_ip, port, hover_id, devices)
 
         if self.ui_scale != 1.0:
             hitboxes = {k: tuple(int(round(v * self.ui_scale)) for v in box) for k, box in hitboxes.items()}
@@ -93,23 +95,27 @@ class AppleNeoRenderer:
             if kind == "chip":
                 self.p.text(draw, self.width / 2, cur_y + CHIP_H / 2, obj, size=12, color=TOKENS["text_secondary"], anchor="mm")
             else:
-                is_mine = obj.get("sender", "pc") != "phone"
+                is_mine = obj.get("sender", "pc") == "pc"
                 tail = 5 if lay[0] == "text" else 0
                 x = (self.width - 18 - tail - lay[1]) if is_mine else 18 + tail
                 self.painter.paint(canvas, draw, hitboxes, obj, lay, x, cur_y, hover_id)
                 draw = ImageDraw.Draw(canvas)
             cur_y += row_h
 
-    def _render_top_links(self, draw, hitboxes, hover_id, phone_connected):
+    def _render_top_links(self, draw, hitboxes, hover_id, devices):
         sc = self.p.scale
         draw.rectangle([0, 0, self.W, round(NAV_H * sc)], fill=TOKENS["canvas_bg"])
+        if devices:
+            cx, cy, r = round(19 * sc), round((NAV_H / 2) * sc), max(2, round(3.2 * sc))
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=TOKENS["wx_green"][:3])
+            self.p.text(draw, 28, NAV_H / 2, format_devices_summary(devices), size=12, color=TOKENS["text_secondary"], anchor="lm")
         clr_col = TOKENS["link_blue_hover"] if hover_id == "btn_clear" else TOKENS["link_blue"]
         self.p.text(draw, self.width - 16, NAV_H / 2, "清空", size=14, color=clr_col, anchor="rm")
         hitboxes["btn_clear"] = (self.width - 54, 6, self.width - 10, NAV_H - 6)
-        if not phone_connected:
-            conn_col = TOKENS["link_blue_hover"] if hover_id == "btn_connect" else TOKENS["link_blue"]
-            self.p.text(draw, self.width - 64, NAV_H / 2, "手机连接", size=14, color=conn_col, anchor="rm")
-            hitboxes["btn_connect"] = (self.width - 132, 6, self.width - 58, NAV_H - 6)
+        conn_col = TOKENS["link_blue_hover"] if hover_id == "btn_connect" else TOKENS["link_blue"]
+        conn_lbl = "添加设备" if devices else "手机连接"
+        self.p.text(draw, self.width - 64, NAV_H / 2, conn_lbl, size=14, color=conn_col, anchor="rm")
+        hitboxes["btn_connect"] = (self.width - 132, 6, self.width - 58, NAV_H - 6)
 
     def _render_composer(self, canvas, draw, hitboxes, comp_top, comp_h, hover_id, draft_img=None, dw=0, dh=0):
         sc = self.p.scale
@@ -150,7 +156,7 @@ class AppleNeoRenderer:
         self.p.text(draw, sx + sw / 2, btn_y + sh / 2, "发送", size=14, bold=True, color=(255, 255, 255, 255), anchor="mm")
         hitboxes["btn_send"] = (sx, btn_y, sx + sw, btn_y + sh)
 
-    def _render_modal_sheet(self, canvas, hitboxes, host_ip, port, hover_id):
+    def _render_modal_sheet(self, canvas, hitboxes, host_ip, port, hover_id, devices=None):
         blurred = canvas.filter(ImageFilter.GaussianBlur(10 * S))
         overlay = Image.new("RGBA", (self.W, self.H), (20, 20, 24, 76))
         canvas = Image.alpha_composite(blurred, overlay)
@@ -158,18 +164,23 @@ class AppleNeoRenderer:
         hitboxes.clear()
         hitboxes["modal_backdrop"] = (0, 0, self.width, self.height)
 
-        mw, mh = 340, 344
+        mw, mh = 340, 368 if devices else 344
         mx, my = (self.width - mw) / 2, (self.height - mh) / 2
         self.p.shadow_card(canvas, mx, my, mw, mh, radius=18, shadow_alpha=36, shadow_blur=20, offset_y=6)
         draw = ImageDraw.Draw(canvas)
         hitboxes["modal_card_block"] = (mx, my, mx + mw, my + mh)
 
         url_str = f"http://{host_ip}:{port}"
-        self.p.text(draw, mx + mw / 2, my + 32, "用手机相机或浏览器扫码", size=17, bold=True, color=TOKENS["space_black"], anchor="mm")
+        self.p.text(draw, mx + mw / 2, my + 32, "扫码连接手机（支持多台）", size=16.5, bold=True, color=TOKENS["space_black"], anchor="mm")
         self.p.paste_qr_code(canvas, url_str, mx + mw / 2, my + 58, size_px=168)
         draw = ImageDraw.Draw(canvas)
         self.p.text(draw, mx + mw / 2, my + 246, url_str, size=12.5, mono=True, color=TOKENS["text_body"], anchor="mm")
         self.p.text(draw, mx + mw / 2, my + 268, "需连同一 Wi-Fi（请勿用微信扫一扫）", size=12, color=TOKENS["text_secondary"], anchor="mm")
+        if devices:
+            status_txt = format_devices_summary(devices, prefix="已连 ")
+            if len(devices) <= 2:
+                status_txt += " · 可继续扫码"
+            self.p.text(draw, mx + mw / 2, my + 292, status_txt, size=12, color=TOKENS["semantic_green_text"], anchor="mm")
 
         bx, by, bw, bh = mx + 24, my + mh - 52, mw - 48, 38
         self.p.rounded_box(draw, bx, by, bw, bh, radius=8, bg=TOKENS["wx_green_hover"] if hover_id == "modal_done" else TOKENS["wx_green"])

@@ -57,6 +57,12 @@ def main():
         build_release_packages()
         return
 
+    if "--android" in args:
+        from scripts.android_builder import build_android_apk
+        apk = build_android_apk()
+        print(f"Android APK built: {apk}")
+        return
+
     # Filter out CLI flags; remaining arguments are dropped file paths
     dropped_files = [a for a in args if not a.startswith("--")]
 

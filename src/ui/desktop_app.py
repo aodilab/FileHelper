@@ -108,7 +108,7 @@ class FileHelperApp:
         if sent: self._scroll_to_bottom(); self.redraw(); self.input_entry.focus_set()
     def redraw(self):
         self._sync_input_entry()
-        pil_img, self.hitboxes = self.renderer.render(items=self.file_queue.get_all(), host_ip=self.server_thread.host_ip, port=self.server_thread.port, scroll_y=self.scroll_y, hover_id=self.hover_id, modal_open=self.modal_open, drag_active=self.drag_active, phone_connected=self.file_queue.phone_connected, draft_img=self._draft_pil())
+        pil_img, self.hitboxes = self.renderer.render(items=self.file_queue.get_all(), host_ip=self.server_thread.host_ip, port=self.server_thread.port, scroll_y=self.scroll_y, hover_id=self.hover_id, modal_open=self.modal_open, drag_active=self.drag_active, phone_connected=self.file_queue.phone_connected, draft_img=self._draft_pil(), connected_devices=self.file_queue.get_active_devices())
         self.tk_img = ImageTk.PhotoImage(pil_img); self.canvas.itemconfig(self.canvas_img_id, image=self.tk_img)
     def _hit_test(self, x, y):
         if self.modal_open:
@@ -209,6 +209,7 @@ class FileHelperApp:
 
     def poll_queue(self):
         if self.file_queue.quit_requested: return self.quit_app()
+        self.file_queue.prune_clients()
         hidden = self.root.state() == "withdrawn"
         if self.file_queue.consume_wakeup():
             if len(self.file_queue.get_all()) > self.last_item_count: self._scroll_to_bottom()
@@ -216,7 +217,6 @@ class FileHelperApp:
             self._present_window(); hidden = False
         elif self.file_queue.version != self.last_queue_version:
             self.last_queue_version = self.file_queue.version
-            if self.file_queue.phone_connected and self.modal_open: self.modal_open = False
             cur_len = len(self.file_queue.get_all())
             if cur_len == 0: self.renderer.p._img_cache.clear()
             if cur_len > self.last_item_count: self._scroll_to_bottom()

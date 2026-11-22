@@ -26,18 +26,20 @@ def render_audit_snapshots(output_dir=None, sync_assets=False):
     draft_shot = Image.new("RGBA", (420, 180), (250, 250, 252, 255))
     draft_shot.alpha_composite(sample_thumb.resize((120, 120), Image.Resampling.LANCZOS), (150, 30))
     t0 = 1794300000
+    peers = [{"cid": "ios_1", "kind": "ios", "label": "iPhone"}, {"cid": "android_1", "kind": "android", "label": "Android"}]
     sample_items = [
-        {"id": "1", "kind": "text", "sender": "pc", "text": "https://github.com/aodilab/FileHelper 这是一段比较长的文字，用来检查自动换行效果", "size_str": "40 字", "status": "点击复制", "ts": t0},
-        {"id": "2", "kind": "memory", "sender": "phone", "name": "IMG_8842.png", "thumb": tall_shot, "size_str": "286.6 KB", "status": "已复制", "ts": t0 + 30},
-        {"id": "3", "kind": "file", "sender": "pc", "name": "周末旅行原片_4K60fps_HDR实拍.mp4", "size_str": "1.28 GB", "status": "传输中 45%", "progress": 45, "ts": t0 + 900},
+        {"id": "1", "kind": "text", "sender": "pc", "sender_id": "pc", "sender_label": "电脑", "text": "https://github.com/aodilab/FileHelper 这是一段比较长的文字，用来检查自动换行效果", "size_str": "40 字", "status": "点击复制", "ts": t0},
+        {"id": "2", "kind": "memory", "sender": "ios", "sender_id": "ios_1", "sender_label": "iPhone", "name": "IMG_8842.png", "thumb": tall_shot, "size_str": "286.6 KB", "status": "已复制", "ts": t0 + 30},
+        {"id": "3", "kind": "text", "sender": "android", "sender_id": "android_1", "sender_label": "Android", "text": "安卓端已接入，三端消息实时共享", "size_str": "15 字", "status": "点击复制", "ts": t0 + 60},
+        {"id": "4", "kind": "file", "sender": "pc", "sender_id": "pc", "sender_label": "电脑", "name": "周末旅行原片_4K60fps_HDR实拍.mp4", "size_str": "1.28 GB", "status": "传输中 45%", "progress": 45, "ts": t0 + 900},
     ]
     sc_y = renderer.max_scroll(sample_items, draft_img=draft_shot)
-    img_queue, _ = renderer.render(sample_items, "192.168.1.2", 8899, scroll_y=sc_y, phone_connected=True, hover_id="row_2", draft_img=draft_shot)
+    img_queue, _ = renderer.render(sample_items, "192.168.1.2", 8899, scroll_y=sc_y, phone_connected=True, hover_id="row_2", draft_img=draft_shot, connected_devices=peers)
     p_queue = os.path.join(target_dir, "audit_queue.png")
     img_queue.save(p_queue)
 
-    # 3. In-window frosted glass QR modal state
-    img_modal, _ = renderer.render(sample_items, "192.168.1.2", 8899, modal_open=True)
+    # 3. In-window frosted glass QR modal state (showing live connected peers)
+    img_modal, _ = renderer.render(sample_items, "192.168.1.2", 8899, modal_open=True, connected_devices=[peers[0]])
     p_modal = os.path.join(target_dir, "audit_modal.png")
     img_modal.save(p_modal)
 

@@ -1,10 +1,12 @@
 import os
 import time
 from config.settings import IMAGE_EXTS, TOKENS, VIDEO_EXTS
+from src.core.peer_hub import default_sender_label
 
 TEXT_SIZE = 14.5
 LINE_H = 21
 META_H = 18
+LABEL_H = 20
 ROW_GAP = 0
 CHIP_H = 36
 MAX_LINES = 10
@@ -33,7 +35,7 @@ def file_status_text(it, is_mine):
     if "传输" in st:
         return st
     if st == "等待发送":
-        return "等待手机接收"
+        return "等待接收"
     if st == "已完成":
         return "已发送" if is_mine else "已接收"
     if st == "已保存":
@@ -91,22 +93,27 @@ class ChatItemPainter:
         return "file", w, (68 if len(name_lines) <= 1 else 84), name_lines
 
     @staticmethod
-    def row_height(bub_h):
-        return bub_h + META_H + ROW_GAP
+    def row_height(bub_h, is_mine=True):
+        return bub_h + META_H + ROW_GAP + (0 if is_mine else LABEL_H)
 
     # ---------- painting ----------
     def paint(self, canvas, draw, hitboxes, it, lay, x, y, hover_id):
         kind, w, h, extra = lay
-        is_mine = it.get("sender", "pc") != "phone"
+        is_mine = it.get("sender", "pc") == "pc"
+        by = y
+        if not is_mine:
+            lbl = it.get("sender_label") or default_sender_label(it.get("sender"))
+            self.p.text(draw, x, y + 10, lbl, size=11, color=TOKENS["text_secondary"], anchor="lm")
+            by = y + LABEL_H
         if kind == "text":
-            self._paint_text(draw, x, y, w, h, extra, is_mine)
+            self._paint_text(draw, x, by, w, h, extra, is_mine)
         elif kind == "image":
-            self.p.paste_rounded_image(canvas, it["thumb"], x, y, w, h, radius=8)
+            self.p.paste_rounded_image(canvas, it["thumb"], x, by, w, h, radius=8)
         else:
-            self._paint_file_card(draw, it, x, y, w, h, extra or [it.get("name", "")], is_mine)
+            self._paint_file_card(draw, it, x, by, w, h, extra or [it.get("name", "")], is_mine)
         hovered = bool(hover_id) and hover_id.split("_", 1)[0] in HOVER_PREFIXES and hover_id.split("_", 1)[-1] == it["id"]
-        x0, x1 = self._paint_meta(draw, hitboxes, it, kind, x, y + h, w, is_mine, hovered, hover_id)
-        hitboxes[f"row_{it['id']}"] = (min(x, x0), y, max(x + w, x1), y + h + META_H)
+        x0, x1 = self._paint_meta(draw, hitboxes, it, kind, x, by + h, w, is_mine, hovered, hover_id)
+        hitboxes[f"row_{it['id']}"] = (min(x, x0), by, max(x + w, x1), by + h + META_H)
         for k in [k for k in hitboxes if k.endswith(f"_{it['id']}") and not k.startswith("row_")]:
             hitboxes[k] = hitboxes.pop(k)
 
